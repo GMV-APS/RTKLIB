@@ -286,10 +286,10 @@ static int rescode(int iter, const obsd_t *obs, int n, const double *rs,
                    double *azel, int *vsat, double *resp, int *ns)
 {
     gtime_t time;
-    double r,freq,dion=0.0,dtrp=0.0,vmeas,vion=0.0,vtrp=0.0,rr[3],pos[3],dtr,e[3],P;
+    double r[2],freq,dion=0.0,dtrp=0.0,vmeas,vion=0.0,vtrp=0.0,rr[6],pos[3],dtr,e[3],P;
     int i,j,nv=0,sat,sys,mask[NX-3]={0};
 
-    for (i=0;i<3;i++) rr[i]=x[i];
+    for (i=0;i<6;i++) rr[i]=i<3?x[i]:0.0;
     dtr=x[3];
     
     ecef2pos(rr,pos);
@@ -311,7 +311,7 @@ static int rescode(int iter, const obsd_t *obs, int n, const double *rs,
         if (satexclude(sat,vare[i],svh[i],opt)) continue;
         
         /* geometric distance and elevation mask*/
-        if ((r=geodist(rs+i*6,rr,e))<=0.0) continue;
+        if (geodist(rs+i*6,rr,e,r)<0) continue;
         if (satazel(pos,e,azel+i*2)<opt->elmin) continue;
         
         if (iter>0) {
@@ -336,7 +336,7 @@ static int rescode(int iter, const obsd_t *obs, int n, const double *rs,
         if ((P=prange(obs+i,nav,opt,&vmeas))==0.0) continue;
         
         /* pseudorange residual */
-        v[nv]=P-(r+dtr-CLIGHT*dts[i*2]+dion+dtrp);
+        v[nv]=P-(r[0]+dtr-CLIGHT*dts[i*2]+dion+dtrp);
         trace(4,"sat=%d: v=%.3f P=%.3f r=%.3f dtr=%.6f dts=%.6f dion=%.3f dtrp=%.3f\n",
             sat,v[nv],P,r,dtr,dts[i*2],dion,dtrp);
         
@@ -656,7 +656,8 @@ extern int pntpos(const obsd_t *obs, int n, const nav_t *nav,
     double *rs,*dts,*var,*azel_,*resp;
     int i,stat,vsat[MAXOBS]={0},svh[MAXOBS];
     
-    trace(3,"pntpos  : tobs=%s n=%d\n",time_str(obs[0].time,3),n);
+    if(n>0) trace(3,"pntpos  : tobs=%s n=%d\n",time_str(obs[0].time,3),n);
+    else    trace(3,"pntpos  : tobs=??? n=%d\n",n);
     
     sol->stat=SOLQ_NONE;
     

@@ -74,7 +74,8 @@ extern int init_rtcm(rtcm_t *rtcm)
     
     trace(3,"init_rtcm:\n");
     
-    rtcm->staid=rtcm->stah=rtcm->seqno=rtcm->outtype=0;
+    rtcm->staid=-1;
+    rtcm->stah=rtcm->seqno=rtcm->outtype=0;
     rtcm->time=rtcm->time_s=time0;
     rtcm->sta.name[0]=rtcm->sta.marker[0]='\0';
     rtcm->sta.antdes[0]=rtcm->sta.antsno[0]='\0';

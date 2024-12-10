@@ -371,7 +371,7 @@ void MonitorDialog::ShowRtk(void)
 	rtksvrlock(&rtksvr); // lock
 
     rtk = rtksvr.rtk;
-    thread = (unsigned long)rtksvr.thread;
+    thread = (unsigned long long)rtksvr.thread;
     cycle = rtksvr.cycle;
     state = rtksvr.state;
     rtkstat = rtksvr.rtk.sol.stat;

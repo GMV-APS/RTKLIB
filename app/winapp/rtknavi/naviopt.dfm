@@ -4,18 +4,16 @@ object OptDialog: TOptDialog
   BorderIcons = [biSystemMenu]
   BorderStyle = bsDialog
   Caption = 'Options'
-  ClientHeight = 384
-  ClientWidth = 413
+  ClientHeight = 385
+  ClientWidth = 407
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -11
   Font.Name = 'Tahoma'
   Font.Style = []
-  OldCreateOrder = False
   Position = poMainFormCenter
   OnShow = FormShow
-  PixelsPerInch = 96
   TextHeight = 13
   object Label47: TLabel
     Left = 10
@@ -25,7 +23,7 @@ object OptDialog: TOptDialog
     Caption = 'Station Position File'
   end
   object BtnCancel: TButton
-    Left = 310
+    Left = 306
     Top = 353
     Width = 99
     Height = 29
@@ -44,7 +42,7 @@ object OptDialog: TOptDialog
     OnClick = BtnOkClick
   end
   object BtnSave: TButton
-    Left = 100
+    Left = 104
     Top = 354
     Width = 99
     Height = 28
@@ -55,11 +53,12 @@ object OptDialog: TOptDialog
   object Options: TPageControl
     Left = 0
     Top = 0
-    Width = 413
+    Width = 407
     Height = 353
-    ActivePage = TabSheet2
+    ActivePage = TabSheet1
     Align = alTop
     TabOrder = 4
+    ExplicitWidth = 397
     object TabSheet1: TTabSheet
       Caption = 'Setting&1'
       object Label3: TLabel
@@ -149,7 +148,8 @@ object OptDialog: TOptDialog
         Text = 'OFF'
         Items.Strings = (
           'OFF'
-          'ON')
+          'VEL'
+          'ACC')
       end
       object IonoOpt: TComboBox
         Left = 248
@@ -1212,9 +1212,9 @@ object OptDialog: TOptDialog
         object Label27: TLabel
           Left = 32
           Top = 60
-          Width = 172
+          Width = 143
           Height = 13
-          Caption = 'Vertical Ionospheric Delay (m/10km)'
+          Caption = 'Vertical Ionospheric Delay (m)'
         end
         object Label28: TLabel
           Left = 32
@@ -1226,9 +1226,9 @@ object OptDialog: TOptDialog
         object Label33: TLabel
           Left = 32
           Top = 16
-          Width = 170
+          Width = 156
           Height = 13
-          Caption = 'Receiver Accel Horiz/Vertical (m/s2)'
+          Caption = 'Receiver Accel (m/s2) / Vel (m/s)'
         end
         object PrNoise1: TEdit
           Left = 246
@@ -1970,7 +1970,7 @@ object OptDialog: TOptDialog
       Caption = '&Misc'
       ImageIndex = 6
       DesignSize = (
-        405
+        399
         325)
       object Label19: TLabel
         Left = 32
@@ -1987,7 +1987,7 @@ object OptDialog: TOptDialog
         Caption = 'Solution Font'
       end
       object FontLabel2: TLabel
-        Left = 265
+        Left = 225
         Top = 188
         Width = 80
         Height = 18
@@ -2001,6 +2001,7 @@ object OptDialog: TOptDialog
         Font.Style = []
         ParentFont = False
         Layout = tlCenter
+        ExplicitLeft = 265
       end
       object Label41: TLabel
         Left = 32
@@ -2059,7 +2060,7 @@ object OptDialog: TOptDialog
         Caption = 'Panel Font'
       end
       object FontLabel1: TLabel
-        Left = 265
+        Left = 225
         Top = 164
         Width = 80
         Height = 18
@@ -2073,6 +2074,7 @@ object OptDialog: TOptDialog
         Font.Style = []
         ParentFont = False
         Layout = tlCenter
+        ExplicitLeft = 265
       end
       object SvrCycleE: TEdit
         Left = 248
@@ -2222,7 +2224,7 @@ object OptDialog: TOptDialog
     end
   end
   object BtnLoad: TButton
-    Left = 0
+    Left = 1
     Top = 355
     Width = 100
     Height = 27

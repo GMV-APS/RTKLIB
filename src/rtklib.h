@@ -59,7 +59,7 @@ extern "C" {
 
 #define VER_RTKLIB  "demo5"             /* library version */
 
-#define PATCH_LEVEL "b34i"               /* patch level */
+#define PATCH_LEVEL "b34i-gmv-1.5.0.0"    /* patch level */
 
 #define COPYRIGHT_RTKLIB \
             "Copyright (C) 2007-2020 T.Takasu\nAll rights reserved."
@@ -126,13 +126,17 @@ extern "C" {
 #define TSYS_CMP    5                   /* time system: BeiDou time */
 #define TSYS_IRN    6                   /* time system: IRNSS time */
 
+#ifndef FREQ_L1L5
+#define FREQ_L1L5   0 
+#endif
+
 #ifndef NFREQ
 #define NFREQ       3                   /* number of carrier frequencies */
 #endif
 #define NFREQGLO    2                   /* number of carrier frequencies of GLONASS */
 
 #ifndef NEXOBS
-#define NEXOBS      0                   /* number of extended obs codes */
+#define NEXOBS      10                  /* number of extended obs codes */
 #endif
 
 #define SNR_UNIT    0.001               /* SNR unit (dBHz) */
@@ -181,7 +185,7 @@ extern "C" {
 #endif
 #ifdef ENACMP
 #define MINPRNCMP   1                   /* min satellite sat number of BeiDou */
-#define MAXPRNCMP   46                  /* max satellite sat number of BeiDou */
+#define MAXPRNCMP   62                  /* max satellite sat number of BeiDou */
 #define NSATCMP     (MAXPRNCMP-MINPRNCMP+1) /* number of BeiDou satellites */
 #define NSYSCMP     1
 #else
@@ -422,6 +426,9 @@ extern "C" {
 #define ARMODE_INST 2                   /* AR mode: instantaneous */
 #define ARMODE_FIXHOLD 3                /* AR mode: fix and hold */
 
+#define ARCOMB_UC 0                     /* AR combination: uncombined */
+#define ARCOMB_WL 1                     /* AR combination: wide-lane */
+
 #define GLO_ARMODE_OFF  0               /* GLO AR mode: off */
 #define GLO_ARMODE_ON 1                 /* GLO AR mode: on */
 #define GLO_ARMODE_AUTOCAL 2            /* GLO AR mode: autocal */
@@ -561,6 +568,7 @@ typedef struct {        /* observation data record */
     uint8_t Lstd[NFREQ+NEXOBS]; /* stdev of carrier phase (0.004 cycles)  */
     uint8_t Pstd[NFREQ+NEXOBS]; /* stdev of pseudorange (0.01*2^(n+5) meters) */
     uint8_t freq; /* GLONASS frequency channel (0-13) */
+    double refpos[3];   /* reference position for the given epoch */
 
 } obsd_t;
 
@@ -987,10 +995,12 @@ typedef struct {        /* processing options type */
     int soltype;        /* solution type (0:forward,1:backward,2:combined) */
     int nf;             /* number of frequencies (1:L1,2:L1+L2,3:L1+L2+L5) */
     int navsys;         /* navigation system */
+    int restartp;       /* cold (re)start period (s). 0: disabled */
     double elmin;       /* elevation mask angle (rad) */
     snrmask_t snrmask;  /* SNR mask */
     int sateph;         /* satellite ephemeris/clock (EPHOPT_???) */
     int modear;         /* AR mode (0:off,1:continuous,2:instantaneous,3:fix and hold,4:ppp-ar) */
+    int combar;         /* AR comb (0:uncombined,1:wide-lane) */
     int glomodear;      /* GLONASS AR mode (0:off,1:on,2:auto cal,3:ext cal) */
     int gpsmodear;      /* GPS AR mode, debug/learning only (0:off,1:on) */
     int bdsmodear;      /* BeiDou AR mode (0:off,1:on) */
@@ -1002,6 +1012,8 @@ typedef struct {        /* processing options type */
     int mindropsats;    /* min sats to drop sats in AR */
     int minfix;         /* min fix count to hold ambiguity */
     int armaxiter;      /* max iteration to resolve ambiguity */
+    double forgetion;   /* forgetting factor of ionospheric delay for Adaptive Filter */
+    double afgainion;   /* gain of ionospheric delay for adaptive Filter */
     int ionoopt;        /* ionosphere option (IONOOPT_???) */
     int tropopt;        /* troposphere option (TROPOPT_???) */
     int dynamics;       /* dynamics model (0:none,1:velocity,2:accel) */
@@ -1016,10 +1028,11 @@ typedef struct {        /* processing options type */
                         /* (0:pos in prcopt,  1:average of single pos, */
                         /*  2:read from file, 3:rinex header, 4:rtcm pos) */
     double eratio[NFREQ]; /* code/phase error ratio */
+    double dratio;        /* doppler/phase error ratio */
     double err[8];      /* observation error terms */
                         /* [reserved,constant,elevation,baseline,doppler,snr-max,snr, rcv_std] */
     double std[3];      /* initial-state std [0]bias,[1]iono [2]trop */
-    double prn[6];      /* process-noise std [0]bias,[1]iono [2]trop [3]acch [4]accv [5] pos */
+    double prn[8];      /* process-noise std [0]bias,[1]iono [2]trop [3]acc [4]reserved [5]pos [6]vel [7]ionomax*/
     double sclkstab;    /* satellite clock stability (sec/sec) */
     double thresar[8];  /* AR validation threshold */
     double elmaskar;    /* elevation mask of AR for rising satellite (deg) */
@@ -1029,7 +1042,10 @@ typedef struct {        /* processing options type */
     double varholdamb;  /* variance for fix-and-hold psuedo measurements (cycle^2) */
     double gainholdamb; /* gain used for GLO and SBAS sats to adjust ambiguity */
     double maxtdiff;    /* max difference of time (sec) */
-    double maxinno[2];  /* reject threshold of innovation for code and phase (m) */
+    double maxoutage;   /* max rover outage to restart estimation */
+    double maxinno[3];  /* reject threshold of innovation for phase[0], code[1], doppler[2] (m) */
+    int    adaprej;     /* adaptive residuals check 0:off 1:on*/
+    int    iterej;      /* first iteration for residual checks*/
     double baseline[2]; /* baseline length constraint {const,sigma} (m) */
     double ru[3];       /* rover position for fixed mode {x,y,z} (ecef) (m) */
     double rb[3];       /* base position for relative mode {x,y,z} (ecef) (m) */
@@ -1096,7 +1112,7 @@ typedef struct {        /* RINEX options type */
     int freqtype;       /* frequency type */
     char mask[7][64];   /* code mask {GPS,GLO,GAL,QZS,SBS,CMP,IRN} */
     char staid [32];    /* station id for rinex file name */
-    char prog  [32];    /* program */
+    char prog  [128];    /* program */
     char runby [32];    /* run-by */
     char marker[64];    /* marker name */
     char markerno[32];  /* marker number */
@@ -1132,6 +1148,7 @@ typedef struct {        /* satellite status type */
     double azel[2];     /* azimuth/elevation angles {az,el} (rad) */
     double resp[NFREQ]; /* residuals of pseudorange (m) */
     double resc[NFREQ]; /* residuals of carrier-phase (m) */
+    double resd[NFREQ]; /* residuals of doppler (m) */
     double icbias[NFREQ];  /* glonass IC bias (cycles) */
     uint8_t vsat[NFREQ]; /* valid satellite flag */
     uint16_t snr_rover [NFREQ]; /* rover signal strength (0.25 dBHz) */
@@ -1141,6 +1158,7 @@ typedef struct {        /* satellite status type */
     uint8_t half[NFREQ]; /* half-cycle valid flag */
     int lock [NFREQ];   /* lock counter of phase */
     uint32_t outc [NFREQ]; /* obs outage counter of phase */
+    uint32_t outi; /* obs outage counter for iono */
     uint32_t slipc[NFREQ]; /* cycle-slip counter */
     uint32_t rejc [NFREQ]; /* reject counter */
     double gf[NFREQ-1]; /* geometry-free phase (m) */
@@ -1164,7 +1182,7 @@ typedef struct {        /* RTK control/result type */
     double rb[6];       /* base position/velocity (ecef) (m|m/s) */
     int nx,na;          /* number of float states/fixed states */
     double tt;          /* time difference between current and previous (s) */
-    double *x, *P;      /* float states and their covariance */
+    double *x, *P, *Q;  /* float states, their covariance and their process noise*/
     double *xa,*Pa;     /* fixed states and their covariance */
     int nfix;           /* number of continuous fixes of ambiguity */
     int excsat;         /* index of next satellite to be excluded for partial ambiguity resolution */
@@ -1381,8 +1399,8 @@ EXPORT int  solve (const char *tr, const double *A, const double *Y, int n,
                    int m, double *X);
 EXPORT int  lsq   (const double *A, const double *y, int n, int m, double *x,
                    double *Q);
-EXPORT int  filter(double *x, double *P, const double *H, const double *v,
-                   const double *R, int n, int m);
+EXPORT int  filter(rtk_t *rtk, double *x, double *P, double *Q, const double *H, const double *v,
+                   const double *R, int n, int m, const int *vflg, int iter);
 EXPORT int  smoother(const double *xf, const double *Qf, const double *xb,
                      const double *Qb, int n, double *xs, double *Qs);
 EXPORT void matprint (const double *A, int n, int m, int p, int q);
@@ -1508,7 +1526,7 @@ EXPORT void createdir(const char *path);
 
 /* positioning models --------------------------------------------------------*/
 EXPORT double satazel(const double *pos, const double *e, double *azel);
-EXPORT double geodist(const double *rs, const double *rr, double *e);
+EXPORT int geodist(const double *rs, const double *rr, double *e, double *r);
 EXPORT void dops(int ns, const double *azel, double elmin, double *dop);
 
 /* atmosphere models ---------------------------------------------------------*/

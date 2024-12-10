@@ -1272,7 +1272,7 @@ object OptDialog: TOptDialog
           Top = 60
           Width = 172
           Height = 13
-          Caption = 'Vertical Ionospheric Delay (m/10km)'
+          Caption = 'Ionospheric Delay (m)'
         end
         object Label28: TLabel
           Left = 32

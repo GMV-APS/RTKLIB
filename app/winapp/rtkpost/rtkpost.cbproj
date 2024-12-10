@@ -93,13 +93,13 @@
         <DCC_UnitSearchPath>..\..\..\rtklib_extlex;..\..\extlex;..\..\extion;..\..\src\qzsext;..\appcmn;..\..\src\rcv;..\src;..\..\src;K:\proj\rtklib_1.1\util\gui;C:\Documents and Settings\TTAKA\My Documents\Borland Studio Projects;$(BDS)\lib;$(BDS)\lib\obj;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
         <DCC_ResourcePath>..\..\..\rtklib_extlex;..\..\extlex;..\..\extion;..\..\src\qzsext;..\appcmn;..\..\src\rcv;..\src;..\..\src;K:\proj\rtklib_1.1\util\gui;$(DCC_ResourcePath)</DCC_ResourcePath>
         <DCC_CBuilderOutput>JPHNE</DCC_CBuilderOutput>
-        <BCC_Defines>WIN32;TRACE;ENAGLO;ENAGAL;ENAQZS;ENACMP;ENAIRN;NFREQ=3;NEXOBS=3;$(BCC_Defines)</BCC_Defines>
+        <BCC_Defines>WIN32;TRACE;ENAGLO;ENAGAL;ENAQZS;ENACMP;ENAIRN;NFREQ=3;NEXOBS=10;$(BCC_Defines)</BCC_Defines>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win32)'!=''">
         <AppEnableRuntimeThemes>true</AppEnableRuntimeThemes>
         <OutputExt>exe</OutputExt>
-        <BRCC_Defines>_RTLDLL;WIN32;TRACE;ENAGLO;ENAQZS;ENAGAL;NFREQ=3;$(BRCC_Defines)</BRCC_Defines>
-        <TASM_Defines>_RTLDLL;WIN32;TRACE;ENAGLO;ENAQZS;ENAGAL;NFREQ=3;$(TASM_Defines)</TASM_Defines>
+        <BRCC_Defines>_RTLDLL;WIN32;TRACE;ENAGLO;ENAQZS;ENAGAL;NFREQ=3;NEXOBS=10;$(BRCC_Defines)</BRCC_Defines>
+        <TASM_Defines>_RTLDLL;WIN32;TRACE;ENAGLO;ENAQZS;ENAGAL;NFREQ=3;NEXOBS=10;$(TASM_Defines)</TASM_Defines>
         <BCC_UserSuppliedOptions> -tWM -AT -xp</BCC_UserSuppliedOptions>
         <ILINK_LibraryPath>C:\Program Files (x86)\IntelSWTools\compilers_and_libraries_2020.4.311\windows\mkl\lib\intel64_win\;D:\proj\rtklib\lib\iers\;$(ILINK_LibraryPath)</ILINK_LibraryPath>
         <DCC_Namespace>Winapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;Bde;$(DCC_Namespace)</DCC_Namespace>
@@ -111,8 +111,8 @@
         <UWP_CppLogo150>$(BDS)\bin\Artwork\Windows\UWP\cppreg_UwpDefault_150.png</UWP_CppLogo150>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win64)'!=''">
-        <TASM_Defines>_RTLDLL;WIN32;TRACE;ENAGLO;ENAQZS;ENAGAL;NFREQ=3;$(TASM_Defines)</TASM_Defines>
-        <BRCC_Defines>_RTLDLL;WIN32;TRACE;ENAGLO;ENAQZS;ENAGAL;NFREQ=3;$(BRCC_Defines)</BRCC_Defines>
+        <TASM_Defines>_RTLDLL;WIN32;TRACE;ENAGLO;ENAQZS;ENAGAL;NFREQ=3;NEXOBS=10;$(TASM_Defines)</TASM_Defines>
+        <BRCC_Defines>_RTLDLL;WIN32;TRACE;ENAGLO;ENAQZS;ENAGAL;NFREQ=3;NEXOBS=10;$(BRCC_Defines)</BRCC_Defines>
         <UWP_CppLogo44>$(BDS)\bin\Artwork\Windows\UWP\cppreg_UwpDefault_44.png</UWP_CppLogo44>
         <UWP_CppLogo150>$(BDS)\bin\Artwork\Windows\UWP\cppreg_UwpDefault_150.png</UWP_CppLogo150>
         <DCC_Namespace>Winapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;$(DCC_Namespace)</DCC_Namespace>

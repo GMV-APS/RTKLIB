@@ -366,7 +366,7 @@ void __fastcall TPlot::GenVisData(void)
     gtime_t time,ts,te;
     obsd_t data={{0}};
     sta_t sta={0};
-    double tint,r,pos[3],rr[3],rs[6],e[3],azel[2];
+	double tint,r[2],pos[3],rr[3],rs[6],e[3],azel[2];
     int i,j,nobs=0;
     char name[16];
     
@@ -390,7 +390,7 @@ void __fastcall TPlot::GenVisData(void)
         for (i=0;i<MAXSAT;i++) {
             satno2id(i+1,name);
             if (!tle_pos(time,name,"","",&TLEData,NULL,rs)) continue;
-            if ((r=geodist(rs,rr,e))<=0.0) continue;
+            if (geodist(rs,rr,e,r)<0) continue;
             if (satazel(pos,e,azel)<=0.0) continue;
             if (Obs.n>=Obs.nmax) {
                 Obs.nmax=Obs.nmax<=0?4096:Obs.nmax*2;
@@ -1190,7 +1190,7 @@ int __fastcall TPlot::CheckObs(AnsiString file)
 void __fastcall TPlot::UpdateObs(int nobs)
 {
     prcopt_t opt=prcopt_default;
-    double rr[3]={0};
+	double rr[3]={0},r[2];
     int per,per_=-1;
     
     trace(3,"UpdateObs\n");
@@ -1248,8 +1248,8 @@ void __fastcall TPlot::UpdateObs(int nobs)
                 if (!satpos(time,time,sat,EPHOPT_BRDC,&Nav,rs,dts,&var,&svh)) {
                     continue;
                 }
-            }
-            if (geodist(rs,rr,e)>0.0) {
+			}
+			if (geodist(rs,rr,e,r)>=0&&r[0]>0.0) {
                 satazel(pos,e,azel);
                 if (azel[0]<0.0) azel[0]+=2.0*PI;
             }

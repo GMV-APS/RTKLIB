@@ -2,6 +2,6 @@
 # RTKLIB/bin
 #
 
-Recent demo5 binaries are available at:
+Binaries are available at:
 
-http://rtkexplorer.com/downloads/rtklib-code/
+https://github.com/GMV-APS/RTKLIB/releases

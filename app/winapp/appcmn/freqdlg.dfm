@@ -3,7 +3,7 @@ object FreqDialog: TFreqDialog
   Top = 0
   BorderStyle = bsDialog
   Caption = 'GNSS Signals'
-  ClientHeight = 198
+  ClientHeight = 208
   ClientWidth = 296
   Color = clWhite
   Font.Charset = DEFAULT_CHARSET
@@ -11,13 +11,11 @@ object FreqDialog: TFreqDialog
   Font.Height = -11
   Font.Name = 'Tahoma'
   Font.Style = []
-  OldCreateOrder = False
   Position = poMainFormCenter
-  PixelsPerInch = 96
   TextHeight = 13
   object BtnOk: TButton
     Left = 216
-    Top = 161
+    Top = 172
     Width = 72
     Height = 29
     Caption = '&OK'
@@ -38,7 +36,7 @@ object FreqDialog: TFreqDialog
       Height = 22
       Align = alRight
       BevelOuter = bvNone
-      Caption = 'L5'
+      Caption = 'L8'
       Color = clWhite
       ParentBackground = False
       TabOrder = 0
@@ -50,7 +48,7 @@ object FreqDialog: TFreqDialog
       Height = 22
       Align = alRight
       BevelOuter = bvNone
-      Caption = 'L4'
+      Caption = 'L6'
       Color = clWhite
       ParentBackground = False
       TabOrder = 1
@@ -86,7 +84,7 @@ object FreqDialog: TFreqDialog
       Height = 22
       Align = alRight
       BevelOuter = bvNone
-      Caption = 'L3'
+      Caption = 'L5'
       Color = clWhite
       ParentBackground = False
       TabOrder = 4
@@ -425,7 +423,7 @@ object FreqDialog: TFreqDialog
       Height = 22
       Align = alRight
       BevelOuter = bvNone
-      Caption = 'B3'
+      Caption = 'B2I/b'
       Color = clWhite
       ParentBackground = False
       TabOrder = 1
@@ -437,7 +435,7 @@ object FreqDialog: TFreqDialog
       Height = 22
       Align = alRight
       BevelOuter = bvNone
-      Caption = 'B2I/b'
+      Caption = 'B3'
       Color = clWhite
       ParentBackground = False
       TabOrder = 2

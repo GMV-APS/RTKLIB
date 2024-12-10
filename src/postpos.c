@@ -264,7 +264,9 @@ static int inputobs(obsd_t *obs, int solq, const prcopt_t *popt)
             dt=timediff(obss.data[iobsr].time,obss.data[iobsu].time);
             for (i=iobsr;(nr=nextobsf(&obss,&i,2))>0;iobsr=i,i+=nr) {
                 dt_next=timediff(obss.data[i].time,obss.data[iobsu].time);
+                if (dt<=0.0&&dt_next>0.0) break;
                 if (fabs(dt_next)>fabs(dt)) break;
+                
                 dt=dt_next;
             }
         }
@@ -303,6 +305,7 @@ static int inputobs(obsd_t *obs, int solq, const prcopt_t *popt)
             dt=iobsr>=0?timediff(obss.data[iobsr].time,obss.data[iobsu].time):0;
             for (i=iobsr;(nr=nextobsb(&obss,&i,2))>0;iobsr=i,i-=nr) {
                 dt_next=timediff(obss.data[i].time,obss.data[iobsu].time);
+                if (dt>=0.0&&dt_next<0.0) break;
                 if (fabs(dt_next)>fabs(dt)) break;
                 dt=dt_next;
             }
@@ -404,7 +407,7 @@ static void procpos(FILE *fp, FILE *fptm, const prcopt_t *popt, const solopt_t *
     sol_t sol={{0}},oldsol={{0}},newsol={{0}};
     obsd_t *obs_ptr = (obsd_t *)malloc(sizeof(obsd_t)*MAXOBS*2); /* for rover and base */
     double rb[3]={0};
-    int i,nobs,n,solstatic,num=0,pri[]={6,1,2,3,4,5,1,6};
+    int i,nobs,n,solstatic,num=0,pri[]={6,1,2,3,4,5,1,6},rc,lrc=0;
     
     trace(3,"procpos : mode=%d\n",mode); /* 0=single dir, 1=combined */
     
@@ -462,6 +465,17 @@ static void procpos(FILE *fp, FILE *fptm, const prcopt_t *popt, const solopt_t *
                 }
             }
             oldsol = rtk->sol;
+
+            if(popt->restartp!=0)
+            {
+                rc = (obs_ptr[0].time.time)%popt->restartp;
+                if(rc<lrc) {
+                    trace(2,"restart: time=%d %5.3f c=%d lc=%d\n",obs_ptr[0].time.time,obs_ptr[0].time.sec,rc,lrc); 
+                    rtkinit(rtk,popt);
+                }
+                lrc=rc;
+            }
+            
         }
         else if (!reverse) { /* combined-forward */
             if (isolf >= nepoch) {
@@ -481,6 +495,9 @@ static void procpos(FILE *fp, FILE *fptm, const prcopt_t *popt, const solopt_t *
             for (i=0;i<3;i++) rbb[i+isolb*3]=rtk->rb[i];
             isolb++;
         }
+
+
+
     }
     if (mode==SOLMODE_SINGLE_DIR && solstatic&&time.time!=0.0) {
         sol.time=time;

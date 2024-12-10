@@ -14,3 +14,4 @@ __fastcall TFreqDialog::TFreqDialog(TComponent* Owner)
 {
 }
 //---------------------------------------------------------------------------
+

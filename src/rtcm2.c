@@ -394,12 +394,12 @@ extern int decode_rtcm2(rtcm_t *rtcm)
                 type,rtcm->len,zcnt,staid,seqno);
     }
     if (type==3||type==22||type==23||type==24) {
-        if (rtcm->staid!=0&&staid!=rtcm->staid) {
+        if (rtcm->staid>=0&&staid!=rtcm->staid) {
            trace(2,"rtcm2 station id changed: %d->%d\n",rtcm->staid,staid);
         }
         rtcm->staid=staid;
     }
-    if (rtcm->staid!=0&&staid!=rtcm->staid) {
+    if (rtcm->staid>=0&&staid!=rtcm->staid) {
         trace(2,"rtcm2 station id invalid: %d %d\n",staid,rtcm->staid);
         return -1;
     }

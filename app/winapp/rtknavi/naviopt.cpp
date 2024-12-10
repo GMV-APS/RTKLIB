@@ -94,7 +94,7 @@ __fastcall TOptDialog::TOptDialog(TComponent* Owner)
 	: TForm(Owner)
 {
 	AnsiString label,s;
-	int freq[]={1,2,5,6,7,8,9},nglo=MAXPRNGLO,ngal=MAXPRNGAL,nqzs=MAXPRNQZS;
+	int freq[]={1,FREQ_L1L5?5:2,FREQ_L1L5?2:5,6,8,9},nglo=MAXPRNGLO,ngal=MAXPRNGAL,nqzs=MAXPRNQZS;
 	int ncmp=MAXPRNCMP,nirn=MAXPRNIRN;
 
 	PrcOpt=prcopt_default;
@@ -479,7 +479,7 @@ void __fastcall TOptDialog::GetOpt(void)
 	PrNoise2	 ->Text     =s.sprintf("%.2E",PrcOpt.prn[1]);
 	PrNoise3	 ->Text     =s.sprintf("%.2E",PrcOpt.prn[2]);
 	PrNoise4	 ->Text     =s.sprintf("%.2E",PrcOpt.prn[3]);
-	PrNoise5	 ->Text     =s.sprintf("%.2E",PrcOpt.prn[4]);
+	PrNoise5	 ->Text     =s.sprintf("%.2E",PrcOpt.prn[6]);
 	SatClkStab	 ->Text     =s.sprintf("%.2E",PrcOpt.sclkstab);
 	MaxAveEp	 ->Text		=s.sprintf("%d",PrcOpt.maxaveep);
 	ChkInitRestart->Checked =PrcOpt.initrst;
@@ -624,7 +624,7 @@ void __fastcall TOptDialog::SetOpt(void)
 	PrcOpt.prn[1]    =str2dbl(PrNoise2  ->Text);
 	PrcOpt.prn[2]    =str2dbl(PrNoise3  ->Text);
 	PrcOpt.prn[3]    =str2dbl(PrNoise4  ->Text);
-	PrcOpt.prn[4]    =str2dbl(PrNoise5  ->Text);
+	PrcOpt.prn[6]    =str2dbl(PrNoise5  ->Text);
 	PrcOpt.sclkstab  =str2dbl(SatClkStab->Text);
 	PrcOpt.maxaveep  =MaxAveEp->Text.ToInt();
 	PrcOpt.initrst   =ChkInitRestart->Checked;
@@ -681,14 +681,14 @@ void __fastcall TOptDialog::LoadOpt(AnsiString file)
 	AnsiString s;
 	char buff[1024]="",*p,id[32];
 	int sat;
-	prcopt_t prcopt=prcopt_default;
-	solopt_t solopt=solopt_default;
+	PrcOpt=prcopt_default;
+	SolOpt=solopt_default;
 	filopt_t filopt={""};
 	
 	resetsysopts();
 	if (!loadopts(file.c_str(),sysopts)||
-	    !loadopts(file.c_str(),rcvopts)) return;
-	getsysopts(&prcopt,&solopt,&filopt);
+		!loadopts(file.c_str(),rcvopts)) return;
+	getsysopts(&PrcOpt,&SolOpt,&filopt);
 	
 	for (int i=0;i<8;i++) {
 		MainForm->StreamC[i]=strtype[i]!=STR_NONE;
@@ -717,127 +717,127 @@ void __fastcall TOptDialog::LoadOpt(AnsiString file)
 	MainForm->NmeaPos[0]=nmeapos[0];
 	MainForm->NmeaPos[1]=nmeapos[1];
 	
-	SbasSatE     ->Text         =s.sprintf("%d",prcopt.sbassatsel);
+	SbasSatE     ->Text         =s.sprintf("%d",PrcOpt.sbassatsel);
 	
-	PosMode		 ->ItemIndex	=prcopt.mode;
-	Freq		 ->ItemIndex	=prcopt.nf>NFREQ-1?NFREQ-1:prcopt.nf-1;
-	Solution	 ->ItemIndex	=prcopt.soltype;
-	ElMask		 ->Text			=s.sprintf("%.0f",prcopt.elmin*R2D);
-    PrcOpt.snrmask              =prcopt.snrmask;
-	DynamicModel ->ItemIndex	=prcopt.dynamics;
-	TideCorr	 ->ItemIndex	=prcopt.tidecorr;
-	IonoOpt		 ->ItemIndex	=prcopt.ionoopt;
-	TropOpt		 ->ItemIndex	=prcopt.tropopt;
-	SatEphem	 ->ItemIndex	=prcopt.sateph;
+	PosMode		 ->ItemIndex	=PrcOpt.mode;
+	Freq		 ->ItemIndex	=PrcOpt.nf>NFREQ-1?NFREQ-1:PrcOpt.nf-1;
+	Solution	 ->ItemIndex	=PrcOpt.soltype;
+	ElMask		 ->Text			=s.sprintf("%.0f",PrcOpt.elmin*R2D);
+	PrcOpt.snrmask              =PrcOpt.snrmask;
+	DynamicModel ->ItemIndex	=PrcOpt.dynamics;
+	TideCorr	 ->ItemIndex	=PrcOpt.tidecorr;
+	IonoOpt		 ->ItemIndex	=PrcOpt.ionoopt;
+	TropOpt		 ->ItemIndex	=PrcOpt.tropopt;
+	SatEphem	 ->ItemIndex	=PrcOpt.sateph;
 	ExSatsE	     ->Text			="";
 	for (sat=1,p=buff;sat<=MAXSAT;sat++) {
-		if (!prcopt.exsats[sat-1]) continue;
+		if (!PrcOpt.exsats[sat-1]) continue;
 		satno2id(sat,id);
-		p+=sprintf(p,"%s%s%s",p==buff?"":" ",prcopt.exsats[sat-1]==2?"+":"",id);
+		p+=sprintf(p,"%s%s%s",p==buff?"":" ",PrcOpt.exsats[sat-1]==2?"+":"",id);
 	}
 	ExSatsE		 ->Text			=buff;
-	NavSys1	     ->Checked		=prcopt.navsys&SYS_GPS;
-	NavSys2	     ->Checked		=prcopt.navsys&SYS_GLO;
-	NavSys3	     ->Checked		=prcopt.navsys&SYS_GAL;
-	NavSys4	     ->Checked		=prcopt.navsys&SYS_QZS;
-	NavSys5	     ->Checked		=prcopt.navsys&SYS_SBS;
-	NavSys6	     ->Checked		=prcopt.navsys&SYS_CMP;
-	NavSys7	     ->Checked		=prcopt.navsys&SYS_IRN;
-	PosOpt1		 ->Checked		=prcopt.posopt[0];
-	PosOpt2		 ->Checked		=prcopt.posopt[1];
-	PosOpt3		 ->Checked		=prcopt.posopt[2];
-	PosOpt4		 ->Checked		=prcopt.posopt[3];
-	PosOpt5		 ->Checked		=prcopt.posopt[4];
-	PosOpt6		 ->Checked		=prcopt.posopt[5];
+	NavSys1	     ->Checked		=PrcOpt.navsys&SYS_GPS;
+	NavSys2	     ->Checked		=PrcOpt.navsys&SYS_GLO;
+	NavSys3	     ->Checked		=PrcOpt.navsys&SYS_GAL;
+	NavSys4	     ->Checked		=PrcOpt.navsys&SYS_QZS;
+	NavSys5	     ->Checked		=PrcOpt.navsys&SYS_SBS;
+	NavSys6	     ->Checked		=PrcOpt.navsys&SYS_CMP;
+	NavSys7	     ->Checked		=PrcOpt.navsys&SYS_IRN;
+	PosOpt1		 ->Checked		=PrcOpt.posopt[0];
+	PosOpt2		 ->Checked		=PrcOpt.posopt[1];
+	PosOpt3		 ->Checked		=PrcOpt.posopt[2];
+	PosOpt4		 ->Checked		=PrcOpt.posopt[3];
+	PosOpt5		 ->Checked		=PrcOpt.posopt[4];
+	PosOpt6		 ->Checked		=PrcOpt.posopt[5];
 
-	AmbRes		 ->ItemIndex	=prcopt.modear;
-	GloAmbRes	 ->ItemIndex	=prcopt.glomodear;
-	BdsAmbRes	 ->ItemIndex	=prcopt.bdsmodear;
-	ValidThresAR ->Text			=s.sprintf("%.1f",prcopt.thresar[0]);
-	MaxPosVarAR  ->Text         =s.sprintf("%.3f",prcopt.thresar[1]);
-	GloHwBias    ->Text         =s.sprintf("%.3f",prcopt.thresar[2]);
-	ValidThresARMin->Text		=s.sprintf("%.1f",prcopt.thresar[5]);
-	ValidThresARMax->Text		=s.sprintf("%.1f",prcopt.thresar[6]);
-	OutCntResetAmb->Text		=s.sprintf("%d"  ,prcopt.maxout   );
-	FixCntHoldAmb->Text			=s.sprintf("%d"  ,prcopt.minfix   );
-	LockCntFixAmb->Text			=s.sprintf("%d"  ,prcopt.minlock  );
-	ElMaskAR	 ->Text			=s.sprintf("%.0f",prcopt.elmaskar*R2D);
-	ElMaskHold	 ->Text			=s.sprintf("%.0f",prcopt.elmaskhold*R2D);
-	MaxAgeDiff	 ->Text			=s.sprintf("%.1f",prcopt.maxtdiff );
-	RejectCode   ->Text			=s.sprintf("%.1f",prcopt.maxinno[1]);
-	RejectPhase  ->Text			=s.sprintf("%.1f",prcopt.maxinno[0]);
-	VarHoldAmb   ->Text			=s.sprintf("%.4f",prcopt.varholdamb);
-	GainHoldAmb  ->Text			=s.sprintf("%.4f",prcopt.gainholdamb);
-	SlipThres	 ->Text			=s.sprintf("%.3f",prcopt.thresslip);
-	DopThres	 ->Text			=s.sprintf("%.3f",prcopt.thresdop);
-	ARIter		 ->Text			=s.sprintf("%d",  prcopt.armaxiter);
-	MinFixSats	 ->Text         =s.sprintf("%d",  prcopt.minfixsats);
-	MinHoldSats	 ->Text         =s.sprintf("%d",  prcopt.minholdsats);
-	MinDropSats	 ->Text         =s.sprintf("%d",  prcopt.mindropsats);
-	NumIter		 ->Text			=s.sprintf("%d",  prcopt.niter    );
-	SyncSol		 ->ItemIndex	=prcopt.syncsol;
-	ARFilter	 ->ItemIndex	=prcopt.arfilter;
-	BaselineLen	 ->Text			=s.sprintf("%.3f",prcopt.baseline[0]);
-	BaselineSig	 ->Text			=s.sprintf("%.3f",prcopt.baseline[1]);
-	BaselineConst->Checked		=prcopt.baseline[0]>0.0;
+	AmbRes		 ->ItemIndex	=PrcOpt.modear;
+	GloAmbRes	 ->ItemIndex	=PrcOpt.glomodear;
+	BdsAmbRes	 ->ItemIndex	=PrcOpt.bdsmodear;
+	ValidThresAR ->Text			=s.sprintf("%.1f",PrcOpt.thresar[0]);
+	MaxPosVarAR  ->Text         =s.sprintf("%.3f",PrcOpt.thresar[1]);
+	GloHwBias    ->Text         =s.sprintf("%.3f",PrcOpt.thresar[2]);
+	ValidThresARMin->Text		=s.sprintf("%.1f",PrcOpt.thresar[5]);
+	ValidThresARMax->Text		=s.sprintf("%.1f",PrcOpt.thresar[6]);
+	OutCntResetAmb->Text		=s.sprintf("%d"  ,PrcOpt.maxout   );
+	FixCntHoldAmb->Text			=s.sprintf("%d"  ,PrcOpt.minfix   );
+	LockCntFixAmb->Text			=s.sprintf("%d"  ,PrcOpt.minlock  );
+	ElMaskAR	 ->Text			=s.sprintf("%.0f",PrcOpt.elmaskar*R2D);
+	ElMaskHold	 ->Text			=s.sprintf("%.0f",PrcOpt.elmaskhold*R2D);
+	MaxAgeDiff	 ->Text			=s.sprintf("%.1f",PrcOpt.maxtdiff );
+	RejectCode   ->Text			=s.sprintf("%.1f",PrcOpt.maxinno[1]);
+	RejectPhase  ->Text			=s.sprintf("%.1f",PrcOpt.maxinno[0]);
+	VarHoldAmb   ->Text			=s.sprintf("%.4f",PrcOpt.varholdamb);
+	GainHoldAmb  ->Text			=s.sprintf("%.4f",PrcOpt.gainholdamb);
+	SlipThres	 ->Text			=s.sprintf("%.3f",PrcOpt.thresslip);
+	DopThres	 ->Text			=s.sprintf("%.3f",PrcOpt.thresdop);
+	ARIter		 ->Text			=s.sprintf("%d",  PrcOpt.armaxiter);
+	MinFixSats	 ->Text         =s.sprintf("%d",  PrcOpt.minfixsats);
+	MinHoldSats	 ->Text         =s.sprintf("%d",  PrcOpt.minholdsats);
+	MinDropSats	 ->Text         =s.sprintf("%d",  PrcOpt.mindropsats);
+	NumIter		 ->Text			=s.sprintf("%d",  PrcOpt.niter    );
+	SyncSol		 ->ItemIndex	=PrcOpt.syncsol;
+	ARFilter	 ->ItemIndex	=PrcOpt.arfilter;
+	BaselineLen	 ->Text			=s.sprintf("%.3f",PrcOpt.baseline[0]);
+	BaselineSig	 ->Text			=s.sprintf("%.3f",PrcOpt.baseline[1]);
+	BaselineConst->Checked		=PrcOpt.baseline[0]>0.0;
 	
-	SolFormat	 ->ItemIndex	=solopt.posf;
-	TimeFormat	 ->ItemIndex	=solopt.timef==0?0:solopt.times+1;
-	TimeDecimal	 ->Text			=s.sprintf("%d",solopt.timeu);
-	LatLonFormat ->ItemIndex	=solopt.degf;
-	FieldSep	 ->Text			=solopt.sep;
-	OutputHead	 ->ItemIndex	=solopt.outhead;
-	OutputOpt	 ->ItemIndex	=solopt.outopt;
-	OutputVel	 ->ItemIndex	=solopt.outvel;
-	OutputSingle ->ItemIndex	=prcopt.outsingle;
-	MaxSolStd	 ->Text			=s.sprintf("%.2g",solopt.maxsolstd);
-	OutputDatum  ->ItemIndex	=solopt.datum;
-	OutputHeight ->ItemIndex	=solopt.height;
-	OutputGeoid  ->ItemIndex	=solopt.geoid;
-	NmeaIntv1	 ->Text			=s.sprintf("%.2g",solopt.nmeaintv[0]);
-	NmeaIntv2	 ->Text			=s.sprintf("%.2g",solopt.nmeaintv[1]);
-	DebugTrace	 ->ItemIndex	=solopt.trace;
-	DebugStatus	 ->ItemIndex	=solopt.sstat;
+	SolFormat	 ->ItemIndex	=SolOpt.posf;
+	TimeFormat	 ->ItemIndex	=SolOpt.timef==0?0:SolOpt.times+1;
+	TimeDecimal	 ->Text			=s.sprintf("%d",SolOpt.timeu);
+	LatLonFormat ->ItemIndex	=SolOpt.degf;
+	FieldSep	 ->Text			=SolOpt.sep;
+	OutputHead	 ->ItemIndex	=SolOpt.outhead;
+	OutputOpt	 ->ItemIndex	=SolOpt.outopt;
+	OutputVel	 ->ItemIndex	=SolOpt.outvel;
+	OutputSingle ->ItemIndex	=PrcOpt.outsingle;
+	MaxSolStd	 ->Text			=s.sprintf("%.2g",SolOpt.maxsolstd);
+	OutputDatum  ->ItemIndex	=SolOpt.datum;
+	OutputHeight ->ItemIndex	=SolOpt.height;
+	OutputGeoid  ->ItemIndex	=SolOpt.geoid;
+	NmeaIntv1	 ->Text			=s.sprintf("%.2g",SolOpt.nmeaintv[0]);
+	NmeaIntv2	 ->Text			=s.sprintf("%.2g",SolOpt.nmeaintv[1]);
+	DebugTrace	 ->ItemIndex	=SolOpt.trace;
+	DebugStatus	 ->ItemIndex	=SolOpt.sstat;
 	
-	MeasErrR1	 ->Text			=s.sprintf("%.1f",prcopt.eratio[0]);
-	MeasErrR2	 ->Text			=s.sprintf("%.3f",prcopt.eratio[1]);
-	MeasErrR5	 ->Text			=s.sprintf("%.3f",prcopt.eratio[2]);
-	MeasErr2	 ->Text			=s.sprintf("%.3f",prcopt.err[1]);
-	MeasErr3	 ->Text			=s.sprintf("%.3f",prcopt.err[2]);
-	MeasErr4	 ->Text			=s.sprintf("%.3f",prcopt.err[3]);
-	MeasErr5	 ->Text			=s.sprintf("%.3f",prcopt.err[4]);
-	MeasErr6	 ->Text			=s.sprintf("%.3f",prcopt.err[5]);
-	MeasErr7	 ->Text			=s.sprintf("%.3f",prcopt.err[6]);
-	MeasErr8	 ->Text			=s.sprintf("%.3f",prcopt.err[7]);
-	SatClkStab	 ->Text			=s.sprintf("%.2E",prcopt.sclkstab);
-	PrNoise1	 ->Text			=s.sprintf("%.2E",prcopt.prn[0]);
-	PrNoise2	 ->Text			=s.sprintf("%.2E",prcopt.prn[1]);
-	PrNoise3	 ->Text			=s.sprintf("%.2E",prcopt.prn[2]);
-	PrNoise4	 ->Text			=s.sprintf("%.2E",prcopt.prn[3]);
-	PrNoise5	 ->Text			=s.sprintf("%.2E",prcopt.prn[4]);
+	MeasErrR1	 ->Text			=s.sprintf("%.1f",PrcOpt.eratio[0]);
+	MeasErrR2	 ->Text			=s.sprintf("%.3f",PrcOpt.eratio[1]);
+	MeasErrR5	 ->Text			=s.sprintf("%.3f",PrcOpt.eratio[2]);
+	MeasErr2	 ->Text			=s.sprintf("%.3f",PrcOpt.err[1]);
+	MeasErr3	 ->Text			=s.sprintf("%.3f",PrcOpt.err[2]);
+	MeasErr4	 ->Text			=s.sprintf("%.3f",PrcOpt.err[3]);
+	MeasErr5	 ->Text			=s.sprintf("%.3f",PrcOpt.err[4]);
+	MeasErr6	 ->Text			=s.sprintf("%.3f",PrcOpt.err[5]);
+	MeasErr7	 ->Text			=s.sprintf("%.3f",PrcOpt.err[6]);
+	MeasErr8	 ->Text			=s.sprintf("%.3f",PrcOpt.err[7]);
+	SatClkStab	 ->Text			=s.sprintf("%.2E",PrcOpt.sclkstab);
+	PrNoise1	 ->Text			=s.sprintf("%.2E",PrcOpt.prn[0]);
+	PrNoise2	 ->Text			=s.sprintf("%.2E",PrcOpt.prn[1]);
+	PrNoise3	 ->Text			=s.sprintf("%.2E",PrcOpt.prn[2]);
+	PrNoise4	 ->Text			=s.sprintf("%.2E",PrcOpt.prn[3]);
+	PrNoise5	 ->Text			=s.sprintf("%.2E",PrcOpt.prn[6]);
 	
-	RovAntPcv	 ->Checked		=*prcopt.anttype[0];
-	RefAntPcv	 ->Checked		=*prcopt.anttype[1];
-	RovAnt		 ->Text			=prcopt.anttype[0];
-	RefAnt		 ->Text			=prcopt.anttype[1];
-	RovAntE		 ->Text			=s.sprintf("%.4f",prcopt.antdel[0][0]);
-	RovAntN		 ->Text			=s.sprintf("%.4f",prcopt.antdel[0][1]);
-	RovAntU		 ->Text			=s.sprintf("%.4f",prcopt.antdel[0][2]);
-	RefAntE		 ->Text			=s.sprintf("%.4f",prcopt.antdel[1][0]);
-	RefAntN		 ->Text			=s.sprintf("%.4f",prcopt.antdel[1][1]);
-	RefAntU		 ->Text			=s.sprintf("%.4f",prcopt.antdel[1][2]);
-	MaxAveEp	 ->Text			=s.sprintf("%d",prcopt.maxaveep);
-	ChkInitRestart->Checked		=prcopt.initrst;
+	RovAntPcv	 ->Checked		=*PrcOpt.anttype[0];
+	RefAntPcv	 ->Checked		=*PrcOpt.anttype[1];
+	RovAnt		 ->Text			=PrcOpt.anttype[0];
+	RefAnt		 ->Text			=PrcOpt.anttype[1];
+	RovAntE		 ->Text			=s.sprintf("%.4f",PrcOpt.antdel[0][0]);
+	RovAntN		 ->Text			=s.sprintf("%.4f",PrcOpt.antdel[0][1]);
+	RovAntU		 ->Text			=s.sprintf("%.4f",PrcOpt.antdel[0][2]);
+	RefAntE		 ->Text			=s.sprintf("%.4f",PrcOpt.antdel[1][0]);
+	RefAntN		 ->Text			=s.sprintf("%.4f",PrcOpt.antdel[1][1]);
+	RefAntU		 ->Text			=s.sprintf("%.4f",PrcOpt.antdel[1][2]);
+	MaxAveEp	 ->Text			=s.sprintf("%d",PrcOpt.maxaveep);
+	ChkInitRestart->Checked		=PrcOpt.initrst;
 	
 	RovPosTypeP	 ->ItemIndex	=0;
 	RefPosTypeP	 ->ItemIndex	=0;
-	if      (prcopt.refpos==POSOPT_RTCM  ) RefPosTypeP->ItemIndex=3;
-	else if (prcopt.refpos==POSOPT_SINGLE) RefPosTypeP->ItemIndex=4;
+	if      (PrcOpt.refpos==POSOPT_RTCM  ) RefPosTypeP->ItemIndex=3;
+	else if (PrcOpt.refpos==POSOPT_SINGLE) RefPosTypeP->ItemIndex=4;
 	
 	RovPosTypeF					=RovPosTypeP->ItemIndex;
 	RefPosTypeF					=RefPosTypeP->ItemIndex;
-	SetPos(RovPosTypeP->ItemIndex,editu,prcopt.ru);
-	SetPos(RefPosTypeP->ItemIndex,editr,prcopt.rb);
+	SetPos(RovPosTypeP->ItemIndex,editu,PrcOpt.ru);
+	SetPos(RefPosTypeP->ItemIndex,editr,PrcOpt.rb);
 	
 	SatPcvFile ->Text			=filopt.satantp;
 	AntPcvFile ->Text			=filopt.rcvantp;
@@ -868,8 +868,6 @@ void __fastcall TOptDialog::SaveOpt(AnsiString file)
 	TEdit *editr[]={RefPos1,RefPos2,RefPos3};
 	char buff[1024],*p,*q,id[32],comment[256],s[64];
 	int sat,ex;
-	prcopt_t prcopt=prcopt_default;
-	solopt_t solopt=solopt_default;
 	filopt_t filopt={""};
 	
 	for (int i=0;i<8;i++) {
@@ -947,125 +945,125 @@ void __fastcall TOptDialog::SaveOpt(AnsiString file)
 	navmsgsel   =NavSelectS  ->ItemIndex;
 	strcpy(proxyaddr,ProxyAddrE_Text.c_str());
 	fswapmargin =FileSwapMarginE->Text.ToInt();
-	prcopt.sbassatsel=SbasSatE->Text.ToInt();
+	PrcOpt.sbassatsel=SbasSatE->Text.ToInt();
 
-	prcopt.mode		=PosMode	 ->ItemIndex;
-	prcopt.nf		=Freq		 ->ItemIndex+1;
-	prcopt.soltype	=Solution	 ->ItemIndex;
-	prcopt.elmin	=str2dbl(ElMask	->Text)*D2R;
-    prcopt.snrmask	=PrcOpt.snrmask;
-	prcopt.dynamics	=DynamicModel->ItemIndex;
-	prcopt.tidecorr	=TideCorr	 ->ItemIndex;
-	prcopt.ionoopt	=IonoOpt	 ->ItemIndex;
-	prcopt.tropopt	=TropOpt	 ->ItemIndex;
-	prcopt.sateph	=SatEphem	 ->ItemIndex;
+	PrcOpt.mode		=PosMode	 ->ItemIndex;
+	PrcOpt.nf		=Freq		 ->ItemIndex+1;
+	PrcOpt.soltype	=Solution	 ->ItemIndex;
+	PrcOpt.elmin	=str2dbl(ElMask	->Text)*D2R;
+    PrcOpt.snrmask	=PrcOpt.snrmask;
+	PrcOpt.dynamics	=DynamicModel->ItemIndex;
+	PrcOpt.tidecorr	=TideCorr	 ->ItemIndex;
+	PrcOpt.ionoopt	=IonoOpt	 ->ItemIndex;
+	PrcOpt.tropopt	=TropOpt	 ->ItemIndex;
+	PrcOpt.sateph	=SatEphem	 ->ItemIndex;
 	if (ExSatsE->Text!="") {
 		strcpy(buff,ExSatsE_Text.c_str());
 		for (p=strtok(buff," ");p;p=strtok(NULL," ")) {
 			if (*p=='+') {ex=2; p++;} else ex=1;
 			if (!(sat=satid2no(p))) continue;
-			prcopt.exsats[sat-1]=ex;
+			PrcOpt.exsats[sat-1]=ex;
 		}
 	}
-	prcopt.navsys	= (NavSys1->Checked?SYS_GPS:0)|
+	PrcOpt.navsys	= (NavSys1->Checked?SYS_GPS:0)|
 					  (NavSys2->Checked?SYS_GLO:0)|
 					  (NavSys3->Checked?SYS_GAL:0)|
 					  (NavSys4->Checked?SYS_QZS:0)|
 					  (NavSys5->Checked?SYS_SBS:0)|
 					  (NavSys6->Checked?SYS_CMP:0)|
 					  (NavSys7->Checked?SYS_IRN:0);
-	prcopt.posopt[0]=PosOpt1->Checked;
-	prcopt.posopt[1]=PosOpt2->Checked;
-	prcopt.posopt[2]=PosOpt3->Checked;
-	prcopt.posopt[3]=PosOpt4->Checked;
-	prcopt.posopt[4]=PosOpt5->Checked;
-	prcopt.posopt[5]=PosOpt6->Checked;
+	PrcOpt.posopt[0]=PosOpt1->Checked;
+	PrcOpt.posopt[1]=PosOpt2->Checked;
+	PrcOpt.posopt[2]=PosOpt3->Checked;
+	PrcOpt.posopt[3]=PosOpt4->Checked;
+	PrcOpt.posopt[4]=PosOpt5->Checked;
+	PrcOpt.posopt[5]=PosOpt6->Checked;
 	
-	prcopt.modear	=AmbRes		->ItemIndex;
-	prcopt.glomodear=GloAmbRes	->ItemIndex;
-	prcopt.bdsmodear=BdsAmbRes	->ItemIndex;
-	prcopt.thresar[0]=str2dbl(ValidThresAR->Text);
-	prcopt.thresar[1]=str2dbl(MaxPosVarAR->Text);
-	prcopt.thresar[2]=str2dbl(GloHwBias->Text);
-	prcopt.thresar[5]=str2dbl(ValidThresARMin->Text);
-	prcopt.thresar[6]=str2dbl(ValidThresARMax->Text);
-	prcopt.maxout	=str2dbl(OutCntResetAmb->Text);
-	prcopt.minfix	=str2dbl(FixCntHoldAmb->Text);
-	prcopt.minlock	=str2dbl(LockCntFixAmb->Text);
-	prcopt.elmaskar	=str2dbl(ElMaskAR	->Text)*D2R;
-	prcopt.elmaskhold=str2dbl(ElMaskHold->Text)*D2R;
-	prcopt.maxtdiff	=str2dbl(MaxAgeDiff	->Text);
-	prcopt.maxinno[1]	=str2dbl(RejectCode ->Text);
-	prcopt.maxinno[0]	=str2dbl(RejectPhase->Text);
-	prcopt.varholdamb=str2dbl(VarHoldAmb->Text);
-	prcopt.gainholdamb=str2dbl(GainHoldAmb->Text);
-	prcopt.thresslip=str2dbl(SlipThres	->Text);
-	prcopt.thresdop=str2dbl(DopThres	->Text);
-	prcopt.armaxiter=str2dbl(ARIter		->Text);
-	prcopt.minfixsats=str2dbl(MinFixSats		->Text);
-	prcopt.minholdsats=str2dbl(MinHoldSats		->Text);
-	prcopt.mindropsats=str2dbl(MinDropSats		->Text);
-	prcopt.niter	=str2dbl(NumIter	->Text);
-	prcopt.syncsol	=SyncSol->ItemIndex;
-	prcopt.arfilter	=ARFilter->ItemIndex;
-	if (prcopt.mode==PMODE_MOVEB&&BaselineConst->Checked) {
-		prcopt.baseline[0]=str2dbl(BaselineLen->Text);
-		prcopt.baseline[1]=str2dbl(BaselineSig->Text);
+	PrcOpt.modear	=AmbRes		->ItemIndex;
+	PrcOpt.glomodear=GloAmbRes	->ItemIndex;
+	PrcOpt.bdsmodear=BdsAmbRes	->ItemIndex;
+	PrcOpt.thresar[0]=str2dbl(ValidThresAR->Text);
+	PrcOpt.thresar[1]=str2dbl(MaxPosVarAR->Text);
+	PrcOpt.thresar[2]=str2dbl(GloHwBias->Text);
+	PrcOpt.thresar[5]=str2dbl(ValidThresARMin->Text);
+	PrcOpt.thresar[6]=str2dbl(ValidThresARMax->Text);
+	PrcOpt.maxout	=str2dbl(OutCntResetAmb->Text);
+	PrcOpt.minfix	=str2dbl(FixCntHoldAmb->Text);
+	PrcOpt.minlock	=str2dbl(LockCntFixAmb->Text);
+	PrcOpt.elmaskar	=str2dbl(ElMaskAR	->Text)*D2R;
+	PrcOpt.elmaskhold=str2dbl(ElMaskHold->Text)*D2R;
+	PrcOpt.maxtdiff	=str2dbl(MaxAgeDiff	->Text);
+	PrcOpt.maxinno[1]	=str2dbl(RejectCode ->Text);
+	PrcOpt.maxinno[0]	=str2dbl(RejectPhase->Text);
+	PrcOpt.varholdamb=str2dbl(VarHoldAmb->Text);
+	PrcOpt.gainholdamb=str2dbl(GainHoldAmb->Text);
+	PrcOpt.thresslip=str2dbl(SlipThres	->Text);
+	PrcOpt.thresdop=str2dbl(DopThres	->Text);
+	PrcOpt.armaxiter=str2dbl(ARIter		->Text);
+	PrcOpt.minfixsats=str2dbl(MinFixSats		->Text);
+	PrcOpt.minholdsats=str2dbl(MinHoldSats		->Text);
+	PrcOpt.mindropsats=str2dbl(MinDropSats		->Text);
+	PrcOpt.niter	=str2dbl(NumIter	->Text);
+	PrcOpt.syncsol	=SyncSol->ItemIndex;
+	PrcOpt.arfilter	=ARFilter->ItemIndex;
+	if (PrcOpt.mode==PMODE_MOVEB&&BaselineConst->Checked) {
+		PrcOpt.baseline[0]=str2dbl(BaselineLen->Text);
+		PrcOpt.baseline[1]=str2dbl(BaselineSig->Text);
 	}
-	solopt.posf		=SolFormat	->ItemIndex;
-	solopt.timef	=TimeFormat	->ItemIndex==0?0:1;
-	solopt.times	=TimeFormat	->ItemIndex==0?0:TimeFormat->ItemIndex-1;
-	solopt.timeu	=str2dbl(TimeDecimal ->Text);
-	solopt.degf		=LatLonFormat->ItemIndex;
-	strcpy(solopt.sep,FieldSep_Text.c_str());
-	solopt.outhead	=OutputHead	 ->ItemIndex;
-	solopt.outopt	=OutputOpt	 ->ItemIndex;
-	solopt.outvel	=OutputVel	 ->ItemIndex;
-	prcopt.outsingle=OutputSingle->ItemIndex;
-	solopt.maxsolstd=str2dbl(MaxSolStd->Text);
-	solopt.datum	=OutputDatum ->ItemIndex;
-	solopt.height	=OutputHeight->ItemIndex;
-	solopt.geoid	=OutputGeoid ->ItemIndex;
-	solopt.nmeaintv[0]=str2dbl(NmeaIntv1->Text);
-	solopt.nmeaintv[1]=str2dbl(NmeaIntv2->Text);
-	solopt.trace	=DebugTrace	 ->ItemIndex;
-	solopt.sstat	=DebugStatus ->ItemIndex;
+	SolOpt.posf		=SolFormat	->ItemIndex;
+	SolOpt.timef	=TimeFormat	->ItemIndex==0?0:1;
+	SolOpt.times	=TimeFormat	->ItemIndex==0?0:TimeFormat->ItemIndex-1;
+	SolOpt.timeu	=str2dbl(TimeDecimal ->Text);
+	SolOpt.degf		=LatLonFormat->ItemIndex;
+	strcpy(SolOpt.sep,FieldSep_Text.c_str());
+	SolOpt.outhead	=OutputHead	 ->ItemIndex;
+	SolOpt.outopt	=OutputOpt	 ->ItemIndex;
+	SolOpt.outvel	=OutputVel	 ->ItemIndex;
+	PrcOpt.outsingle=OutputSingle->ItemIndex;
+	SolOpt.maxsolstd=str2dbl(MaxSolStd->Text);
+	SolOpt.datum	=OutputDatum ->ItemIndex;
+	SolOpt.height	=OutputHeight->ItemIndex;
+	SolOpt.geoid	=OutputGeoid ->ItemIndex;
+	SolOpt.nmeaintv[0]=str2dbl(NmeaIntv1->Text);
+	SolOpt.nmeaintv[1]=str2dbl(NmeaIntv2->Text);
+	SolOpt.trace	=DebugTrace	 ->ItemIndex;
+	SolOpt.sstat	=DebugStatus ->ItemIndex;
 	
-	prcopt.eratio[0]=str2dbl(MeasErrR1->Text);
-	prcopt.eratio[1]=str2dbl(MeasErrR2->Text);
-	prcopt.eratio[2]=str2dbl(MeasErrR5->Text);
-	prcopt.err[1]	=str2dbl(MeasErr2->Text);
-	prcopt.err[2]	=str2dbl(MeasErr3->Text);
-	prcopt.err[3]	=str2dbl(MeasErr4->Text);
-	prcopt.err[4]	=str2dbl(MeasErr5->Text);
-	prcopt.err[5]	=str2dbl(MeasErr6->Text);
-	prcopt.err[6]	=str2dbl(MeasErr7->Text);
-	prcopt.err[7]	=str2dbl(MeasErr8->Text);
-	prcopt.sclkstab	=str2dbl(SatClkStab->Text);
-	prcopt.prn[0]	=str2dbl(PrNoise1->Text);
-	prcopt.prn[1]	=str2dbl(PrNoise2->Text);
-	prcopt.prn[2]	=str2dbl(PrNoise3->Text);
-	prcopt.prn[3]	=str2dbl(PrNoise4->Text);
-	prcopt.prn[4]	=str2dbl(PrNoise5->Text);
+	PrcOpt.eratio[0]=str2dbl(MeasErrR1->Text);
+	PrcOpt.eratio[1]=str2dbl(MeasErrR2->Text);
+	PrcOpt.eratio[2]=str2dbl(MeasErrR5->Text);
+	PrcOpt.err[1]	=str2dbl(MeasErr2->Text);
+	PrcOpt.err[2]	=str2dbl(MeasErr3->Text);
+	PrcOpt.err[3]	=str2dbl(MeasErr4->Text);
+	PrcOpt.err[4]	=str2dbl(MeasErr5->Text);
+	PrcOpt.err[5]	=str2dbl(MeasErr6->Text);
+	PrcOpt.err[6]	=str2dbl(MeasErr7->Text);
+	PrcOpt.err[7]	=str2dbl(MeasErr8->Text);
+	PrcOpt.sclkstab	=str2dbl(SatClkStab->Text);
+	PrcOpt.prn[0]	=str2dbl(PrNoise1->Text);
+	PrcOpt.prn[1]	=str2dbl(PrNoise2->Text);
+	PrcOpt.prn[2]	=str2dbl(PrNoise3->Text);
+	PrcOpt.prn[3]	=str2dbl(PrNoise4->Text);
+	PrcOpt.prn[6]	=str2dbl(PrNoise5->Text);
 	
-	if (RovAntPcv->Checked) strcpy(prcopt.anttype[0],RovAnt_Text.c_str());
-	if (RefAntPcv->Checked) strcpy(prcopt.anttype[1],RefAnt_Text.c_str());
-	prcopt.antdel[0][0]=str2dbl(RovAntE->Text);
-	prcopt.antdel[0][1]=str2dbl(RovAntN->Text);
-	prcopt.antdel[0][2]=str2dbl(RovAntU->Text);
-	prcopt.antdel[1][0]=str2dbl(RefAntE->Text);
-	prcopt.antdel[1][1]=str2dbl(RefAntN->Text);
-	prcopt.antdel[1][2]=str2dbl(RefAntU->Text);
-	prcopt.maxaveep=MaxAveEp->Text.ToInt();
-	prcopt.initrst=ChkInitRestart->Checked;
+	if (RovAntPcv->Checked) strcpy(PrcOpt.anttype[0],RovAnt_Text.c_str());
+	if (RefAntPcv->Checked) strcpy(PrcOpt.anttype[1],RefAnt_Text.c_str());
+	PrcOpt.antdel[0][0]=str2dbl(RovAntE->Text);
+	PrcOpt.antdel[0][1]=str2dbl(RovAntN->Text);
+	PrcOpt.antdel[0][2]=str2dbl(RovAntU->Text);
+	PrcOpt.antdel[1][0]=str2dbl(RefAntE->Text);
+	PrcOpt.antdel[1][1]=str2dbl(RefAntN->Text);
+	PrcOpt.antdel[1][2]=str2dbl(RefAntU->Text);
+	PrcOpt.maxaveep=MaxAveEp->Text.ToInt();
+	PrcOpt.initrst=ChkInitRestart->Checked;
 	
-	prcopt.rovpos=POSOPT_POS;
-	prcopt.refpos=POSOPT_POS;
-	if      (RefPosTypeP->ItemIndex==3) prcopt.refpos=POSOPT_RTCM;
-	else if (RefPosTypeP->ItemIndex==4) prcopt.refpos=POSOPT_SINGLE;
+	PrcOpt.rovpos=POSOPT_POS;
+	PrcOpt.refpos=POSOPT_POS;
+	if      (RefPosTypeP->ItemIndex==3) PrcOpt.refpos=POSOPT_RTCM;
+	else if (RefPosTypeP->ItemIndex==4) PrcOpt.refpos=POSOPT_SINGLE;
 	
-	if (prcopt.rovpos==POSOPT_POS) GetPos(RovPosTypeP->ItemIndex,editu,prcopt.ru);
-	if (prcopt.refpos==POSOPT_POS) GetPos(RefPosTypeP->ItemIndex,editr,prcopt.rb);
+	if (PrcOpt.rovpos==POSOPT_POS) GetPos(RovPosTypeP->ItemIndex,editu,PrcOpt.ru);
+	if (PrcOpt.refpos==POSOPT_POS) GetPos(RefPosTypeP->ItemIndex,editr,PrcOpt.rb);
 	
 	strcpy(filopt.satantp,SatPcvFile_Text.c_str());
 	strcpy(filopt.rcvantp,AntPcvFile_Text.c_str());
@@ -1076,7 +1074,7 @@ void __fastcall TOptDialog::SaveOpt(AnsiString file)
 	
 	time2str(utc2gpst(timeget()),s,0);
 	sprintf(comment,"RTKNAVI options (%s, v.%s %s)",s,VER_RTKLIB,PATCH_LEVEL);
-	setsysopts(&prcopt,&solopt,&filopt);
+	setsysopts(&PrcOpt,&SolOpt,&filopt);
 	if (!saveopts(file.c_str(),"w",comment,sysopts)||
 		!saveopts(file.c_str(),"a","",rcvopts)) return;
 }

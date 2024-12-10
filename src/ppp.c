@@ -934,7 +934,7 @@ static int ppp_res(int post, const obsd_t *obs, int n, const double *rs,
                    double *azel)
 {
     prcopt_t *opt=&rtk->opt;
-    double y,r,cdtr,bias,rr[3],pos[3],e[3],dtdx[3],L[NFREQ],P[NFREQ],Lc,Pc;
+    double y,r[2],cdtr,bias,rr[3],pos[3],e[3],dtdx[3],L[NFREQ],P[NFREQ],Lc,Pc;
     double var[MAXOBS*2],dtrp=0.0,dion=0.0,vart=0.0,vari=0.0,dcb,freq;
     double dantr[NFREQ]={0},dants[NFREQ]={0};
     double ve[MAXOBS*2*NFREQ]={0},vmax=0;
@@ -952,7 +952,7 @@ static int ppp_res(int post, const obsd_t *obs, int n, const double *rs,
     for (i=0;i<n&&i<MAXOBS;i++) {
         sat=obs[i].sat;
 
-        if ((r=geodist(rs+i*6,rr,e))<=0.0||
+        if (geodist(rs+i*6,rr,e,r)<0||
             satazel(pos,e,azel+i*2)<opt->elmin) {
             exc[i]=1;
             continue;
@@ -1037,7 +1037,7 @@ static int ppp_res(int post, const obsd_t *obs, int n, const double *rs,
                 if (H) H[IB(sat,frq,opt)+nx*nv]=1.0;
             }
             /* residual */
-            double res=y-(r+cdtr-CLIGHT*dts[i*2]+dtrp+C*dion+dcb+bias);
+            double res=y-(r[0]+cdtr-CLIGHT*dts[i*2]+dtrp+C*dion+dcb+bias);
             if (v) v[nv]=res;
 
             if (code==0) rtk->ssat[sat-1].resc[frq]=res;  /* carrier phase */
@@ -1225,7 +1225,7 @@ extern void pppos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav)
             break;
         }
         /* measurement update of ekf states */
-        if ((info=filter(xp,Pp,H,v,R,rtk->nx,nv))) {
+        if ((info=filter(NULL,xp,Pp,NULL,H,v,R,rtk->nx,nv,NULL,0))) {
             trace(2,"%s ppp (%d) filter error info=%d\n",str,i+1,info);
             break;
         }

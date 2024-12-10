@@ -2056,7 +2056,7 @@
              <string/>
             </property>
             <property name="text">
-             <string>Vertical Ionospheric Delay (m/10km)</string>
+             <string>Ionospheric Delay (m)</string>
             </property>
            </widget>
           </item>

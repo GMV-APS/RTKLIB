@@ -240,27 +240,28 @@ static void update_antpos(rtksvr_t *svr, int index)
     int i;
 
         if (svr->rtk.opt.refpos==POSOPT_RTCM&&index==1) {
-        if (svr->format[1]==STRFMT_RTCM2||svr->format[1]==STRFMT_RTCM3) {
-            sta=&svr->rtcm[1].sta;
+            if (svr->format[1]==STRFMT_RTCM2||svr->format[1]==STRFMT_RTCM3) {
+                sta=&svr->rtcm[1].sta;
             }
-        else {
-            sta=&svr->raw[1].sta;
-        }
-        /* update base station position */
+            else {
+                sta=&svr->raw[1].sta;
+            }
+
+            /* update base station position */
             for (i=0;i<3;i++) {
-            svr->rtk.rb[i]=sta->pos[i];
+                svr->rtk.rb[i]=sta->pos[i];
             }
             /* antenna delta */
             ecef2pos(svr->rtk.rb,pos);
-        if (sta->deltype) { /* xyz */
-            del[2]=sta->hgt;
+            if (sta->deltype) { /* xyz */
+                del[2]=sta->hgt;
                 enu2ecef(pos,del,dr);
                 for (i=0;i<3;i++) {
-                svr->rtk.rb[i]+=sta->del[i]+dr[i];
+                    svr->rtk.rb[i]+=sta->del[i]+dr[i];
                 }
             }
             else { /* enu */
-            enu2ecef(pos,sta->del,dr);
+                enu2ecef(pos,sta->del,dr);
                 for (i=0;i<3;i++) {
                     svr->rtk.rb[i]+=dr[i];
                 }
@@ -568,12 +569,13 @@ static void *rtksvrthread(void *arg)
     rtksvr_t *svr=(rtksvr_t *)arg;
     obs_t obs;
     obsd_t data[MAXOBS*2];
-    sol_t sol={{0}};
+    sol_t sol={{0}}; sol.refstationid=-1;
     double tt;
     uint32_t tick,ticknmea,tick1hz,tickreset;
     uint8_t *p,*q;
-    char msg[128];
-    int i,j,n,fobs[3]={0},cycle,cputime;
+    char msg[128],ropt[16],satid[8];
+    char *obsstr,*rtcmopt;
+    int i,j,k,n,fobs[3]={0},cycle,cputime;
     
     tracet(3,"rtksvrthread:\n");
     
@@ -610,7 +612,32 @@ static void *rtksvrthread(void *arg)
             else {
                 /* decode receiver raw/rtcm data */
                 fobs[i]=decoderaw(svr,i);
-                if (1==i&&svr->rtcm[1].staid>0) sol.refstationid=svr->rtcm[1].staid; 
+                trace(4,"decode raw. i=%d fobs[i]=%d\n",i,fobs[i]);
+                
+                if (0==i&&fobs[i]==1) {
+                    rtcmopt=svr->rtcm[1].opt;
+                    memset(rtcmopt,0,256);
+                    for(j=0;j<svr->obs[0][0].n;j++)
+                        for(k=0;k<NFREQ;k++){
+                            obsstr=code2obs(svr->obs[0][0].data[j].code[k]);
+                            satno2id(svr->obs[0][0].data[j].sat,satid); 
+                            memset(satid+1,0,sizeof(satid)-1);
+                            snprintf(ropt,sizeof(ropt),"-%sL%s",satid,obsstr);
+                            trace(4,"base rec opt. obs=%s satid=%s ropt=%s\n",obsstr,satid,ropt);
+                            if(strlen(ropt)==5&&strstr(rtcmopt,ropt)==NULL) strncat(rtcmopt,ropt,5);  
+                        }
+                    trace(3,"base rec opt: %s\n",svr->rtcm[1].opt);           
+                }
+                if (1==i&&svr->rtcm[1].staid>=0&&sol.refstationid>=0&&svr->rtcm[1].staid!=sol.refstationid){
+                    trace(2,"ref station change. restarting estimation. prev_id=%04d cur_id=%04d\n",
+                    sol.refstationid,svr->rtcm[1].staid);
+                    rtkfree(&svr->rtk);
+                    rtkinit(&svr->rtk,&svr->rtk.opt);
+                }
+                if (1==i&&svr->rtcm[1].staid>=0) {
+                    sol.refstationid=svr->rtcm[1].staid;
+                    svr->rtk.sol.refstationid=svr->rtcm[1].staid;
+                }
             }
         }
         /* averaging single base pos */

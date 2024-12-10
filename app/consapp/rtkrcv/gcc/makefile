@@ -3,12 +3,16 @@
 BINDIR = /usr/local/bin
 SRC    = ../../../../src
 
-CTARGET= -DTRACE -DENAGLO -DENAQZS -DENACMP -DENAGAL -DENAIRN -DNFREQ=3 -DNEXOBS=3 -DSVR_REUSEADDR
+CTARGET= -DTRACE -DENAGLO -DENAQZS -DENACMP -DENAGAL -DENAIRN -DNFREQ=3 -DNEXOBS=10 -DSVR_REUSEADDR
 #CTARGET= -DENAGLO -DENAQZS -DENACMP -DENAGAL -DENAIRN -DNFREQ=3 -DIERS_MODEL -DSVR_REUSEADDR
 
 CFLAGS = -std=c99 -Wall -O3 -pedantic -Wno-unused-but-set-variable -I$(SRC) -I.. -DTRACE $(CTARGET) -g
 LDLIBS  = -lm -lrt -lpthread
 #LDLIBS  = ../../../lib/iers/gcc/iers.a -lm -lrt -lpthread
+
+# sanitize
+#CFLAGS  = -std=c99 -Wall -Og -pedantic -Wno-unused-but-set-variable -I$(SRC) -I.. -DTRACE $(CTARGET) -fsanitize=address,undefined -g
+#LDLIBS  = -lm -lrt -lpthread -fsanitize=address,undefined -static-libasan
 
 all        : rtkrcv
 rtkrcv     : rtkrcv.o vt.o rtkcmn.o trace.o rtksvr.o rtkpos.o geoid.o solution.o lambda.o

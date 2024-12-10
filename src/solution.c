@@ -596,13 +596,13 @@ static int decode_solenu(char *buff, const solopt_t *opt, sol_t *sol)
 /* decode solution status ----------------------------------------------------*/
 static int decode_solsss(char *buff, sol_t *sol)
 {
-    double tow,pos[3],std[3]={0};
+    double tow,pos[3];
     int i,week,solq;
     
     trace(4,"decode_solsss:\n");
     
-    if (sscanf(buff,"$POS,%d,%lf,%d,%lf,%lf,%lf,%lf,%lf,%lf",&week,&tow,&solq,
-               pos,pos+1,pos+2,std,std+1,std+2)<6) {
+    if (sscanf(buff,"$POS,%d,%lf,%d,%lf,%lf,%lf",&week,&tow,&solq,
+               pos,pos+1,pos+2)<6) {
         return 0;
     }
     if (week<=0||norm(pos,3)<=0.0||solq==SOLQ_NONE) {
@@ -611,7 +611,7 @@ static int decode_solsss(char *buff, sol_t *sol)
     sol->time=gpst2time(week,tow);
     for (i=0;i<6;i++) {
         sol->rr[i]=i<3?pos[i]:0.0;
-        sol->qr[i]=i<3?(float)SQR(std[i]):0.0f;
+        sol->qr[i]=0.0f;
         sol->dtr[i]=0.0;
     }
     sol->ns=0;
@@ -1445,7 +1445,7 @@ extern int outprcopts(uint8_t *buff, const prcopt_t *opt)
         "PPP Kinematic","PPP Static","PPP Fixed","","",""
     };
     const char *s2[]={
-        "L1","L1+L2/E5b","L1+L2/E5b+L5","L1+L2/E5b+L5+L6","L1+2+3+4+5","L1+2+3+4+5+6","","",""
+        "L1",FREQ_L1L5?"L1+L5":"L1+L2",FREQ_L1L5?"L1+L5+L2":"L1+L2+L5",FREQ_L1L5?"L1+L5+L2+L6":"L1+L2+L5+L6","","","","",""
     };
     const char *s3[]={
         "Forward","Backward","Combined-Phase Reset","Combined-No Phase Reset","",""
@@ -1470,6 +1470,9 @@ extern int outprcopts(uint8_t *buff, const prcopt_t *opt)
     const char *s9[]={
         "OFF","ON","AutoCal","Fix and Hold",""
     };
+    const char *s10[]={
+        "off","vel","acc",""
+    };
     int i;
     char *p=(char *)buff;
     
@@ -1485,7 +1488,7 @@ extern int outprcopts(uint8_t *buff, const prcopt_t *opt)
     }
     p+=sprintf(p,"%s elev mask : %.1f deg\r\n",COMMENTH,opt->elmin*R2D);
     if (opt->mode>PMODE_SINGLE) {
-        p+=sprintf(p,"%s dynamics  : %s\r\n",COMMENTH,opt->dynamics?"on":"off");
+        p+=sprintf(p,"%s dynamics  : %s\r\n",COMMENTH,s10[opt->dynamics]);
         p+=sprintf(p,"%s tidecorr  : %s\r\n",COMMENTH,opt->tidecorr?"on":"off");
     }
     if (opt->mode<=PMODE_FIXED) {

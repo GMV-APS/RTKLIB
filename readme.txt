@@ -1,10 +1,13 @@
-A version of RTKLIB optimized for low cost GNSS receivers (single, dual, or triple frequency), especially u-blox receivers.  It is based on RTKLIB 2.4.3 and is kept reasonably closely synced to that branch.   This software is provided “AS IS” without any warranties of any kind so please be careful, especially if using it in any kind of real-time application. 
+A version of RTKLIB based on rtklibexplorer. The main focus of the evolutions have been to improve positioning performance, especially when using long-baseline (i.e > 10km distance) or VRS for the reference station. 
+This software is provided “AS IS” without any warranties of any kind.
 
-Releases with Windows executables are avaiable at https://github.com/rtklibexplorer/RTKLIB/releases 
+This fork has not been especially tailored to work with any of GMV's products and is still valid for general-purpose positioning.
 
-Tutorials for this code, and sample GPS data sets are available at http://rtkexplorer.com/  
+Releases with Windows executables are avaiable at https://github.com/GMV-APS/RTKLIB/releases
 
-The latest version of the user manual is at: https://rtkexplorer.com/pdfs/manual_demo5.pdf
+Tutorials for this code, and sample GPS data sets from rtkexplorer team are available at http://rtkexplorer.com/  
+
+The latest version of the user manual by rtklibexplorer team is at: https://rtkexplorer.com/pdfs/manual_demo5.pdf
 
    
 WINDOWS: To build and install code for with Windows Embarcadero compiler:
@@ -31,4 +34,6 @@ GUIs (Qt based - available but not fully supported):
 3) make
 4) ./install_qtapp
 
-The linux GUI files have been updated from https://github.com/JensReimann/RTKLIB/tree/rtklib_2.4.3 but are not fully functional
+The linux GUI files have been updated but are not fully functional. 
+In general, GUIs have been adapted but not fully validated as their linux CUIs counterparts have.
+Especial care has to be taken when using RTKPOST as it cannot be fully configurable even when loading a configuration file. Usage is discouraged in favour of its CUI counterpart rnx2rtkp.

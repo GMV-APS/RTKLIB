@@ -60,9 +60,11 @@ static char snrmask_[NFREQ][1024];
 #define STAOPT  "0:all,1:single"
 #define STSOPT  "0:off,1:state,2:residual"
 #define ARMOPT  "0:off,1:continuous,2:instantaneous,3:fix-and-hold"
+#define ARCOPT  "0:uncombined,1:wide-lane"
 #define POSOPT  "0:llh,1:xyz,2:single,3:posfile,4:rinexhead,5:rtcm,6:raw"
 #define TIDEOPT "0:off,1:on,2:otl"
 #define PHWOPT  "0:off,1:on,2:precise"
+#define DYNOPT  "0:off,1:vel,2:acc"
 
 EXPORT opt_t sysopts[]={
     {"pos1-posmode",    3,  (void *)&prcopt_.mode,       MODOPT },
@@ -74,7 +76,7 @@ EXPORT opt_t sysopts[]={
     {"pos1-snrmask_L1", 2,  (void *)snrmask_[0],         ""     },
     {"pos1-snrmask_L2", 2,  (void *)snrmask_[1],         ""     },
     {"pos1-snrmask_L5", 2,  (void *)snrmask_[2],         ""     },
-    {"pos1-dynamics",   3,  (void *)&prcopt_.dynamics,   SWTOPT },
+    {"pos1-dynamics",   3,  (void *)&prcopt_.dynamics,   DYNOPT },
     {"pos1-tidecorr",   3,  (void *)&prcopt_.tidecorr,   TIDEOPT},
     {"pos1-ionoopt",    3,  (void *)&prcopt_.ionoopt,    IONOPT },
     {"pos1-tropopt",    3,  (void *)&prcopt_.tropopt,    TRPOPT },
@@ -87,8 +89,10 @@ EXPORT opt_t sysopts[]={
     {"pos1-posopt6",    3,  (void *)&prcopt_.posopt[5],  SWTOPT },
     {"pos1-exclsats",   2,  (void *)exsats_,             "prn ..."},
     {"pos1-navsys",     0,  (void *)&prcopt_.navsys,     NAVOPT },
+    {"pos1-restartp",   0,  (void *)&prcopt_.restartp ,  "s" },
     
     {"pos2-armode",     3,  (void *)&prcopt_.modear,     ARMOPT },
+    {"pos2-arcomb",     3,  (void *)&prcopt_.combar,     ARCOPT },
     {"pos2-gloarmode",  3,  (void *)&prcopt_.glomodear,  GAROPT },
     {"pos2-bdsarmode",  3,  (void *)&prcopt_.bdsmodear,  SWTOPT },
     {"pos2-arfilter",   3,  (void *)&prcopt_.arfilter,   SWTOPT },
@@ -111,14 +115,20 @@ EXPORT opt_t sysopts[]={
     {"pos2-elmaskhold", 1,  (void *)&elmaskhold_,        "deg"  },
     {"pos2-aroutcnt",   0,  (void *)&prcopt_.maxout,     ""     },
     {"pos2-maxage",     1,  (void *)&prcopt_.maxtdiff,   "s"    },
+    {"pos2-maxoutage",  1,  (void *)&prcopt_.maxoutage,  "s"    },
     {"pos2-syncsol",    3,  (void *)&prcopt_.syncsol,    SWTOPT },
     {"pos2-slipthres",  1,  (void *)&prcopt_.thresslip,  "m"    },
     {"pos2-dopthres",   1,  (void *)&prcopt_.thresdop,   "m"    },
     {"pos2-rejionno",   1,  (void *)&prcopt_.maxinno[0], "m"    },
     {"pos2-rejcode",    1,  (void *)&prcopt_.maxinno[1], "m"    },
+    {"pos2-rejdopp",    1,  (void *)&prcopt_.maxinno[2], "m"    },
+    {"pos2-adaprej",    3,  (void *)&prcopt_.adaprej,    SWTOPT },
+    {"pos2-iterej",     0,  (void *)&prcopt_.iterej,     "-"     },
     {"pos2-niter",      0,  (void *)&prcopt_.niter,      ""     },
     {"pos2-baselen",    1,  (void *)&prcopt_.baseline[0],"m"    },
     {"pos2-basesig",    1,  (void *)&prcopt_.baseline[1],"m"    },
+    {"pos2-forgetion",  1,  (void *)&prcopt_.forgetion,  ""     },
+    {"pos2-afgainion",  1,  (void *)&prcopt_.afgainion,  ""     },
     
     {"out-solformat",   3,  (void *)&solopt_.posf,       SOLOPT },
     {"out-outhead",     3,  (void *)&solopt_.outhead,    SWTOPT },
@@ -140,6 +150,7 @@ EXPORT opt_t sysopts[]={
     {"stats-eratio1",   1,  (void *)&prcopt_.eratio[0],  ""     },
     {"stats-eratio2",   1,  (void *)&prcopt_.eratio[1],  ""     },
     {"stats-eratio5",   1,  (void *)&prcopt_.eratio[2],  ""     },
+    {"stats-dratio",    1,  (void *)&prcopt_.dratio,     ""     },
     {"stats-errphase",  1,  (void *)&prcopt_.err[1],     "m"    },
     {"stats-errphaseel",1,  (void *)&prcopt_.err[2],     "m"    },
     {"stats-errphasebl",1,  (void *)&prcopt_.err[3],     "m/10km"},
@@ -150,12 +161,13 @@ EXPORT opt_t sysopts[]={
     {"stats-stdbias",   1,  (void *)&prcopt_.std[0],     "m"    },
     {"stats-stdiono",   1,  (void *)&prcopt_.std[1],     "m"    },
     {"stats-stdtrop",   1,  (void *)&prcopt_.std[2],     "m"    },
-    {"stats-prnaccelh", 1,  (void *)&prcopt_.prn[3],     "m/s^2"},
-    {"stats-prnaccelv", 1,  (void *)&prcopt_.prn[4],     "m/s^2"},
+    {"stats-prnacc",    1,  (void *)&prcopt_.prn[3],     "m/s^2"},
     {"stats-prnbias",   1,  (void *)&prcopt_.prn[0],     "m"    },
     {"stats-prniono",   1,  (void *)&prcopt_.prn[1],     "m"    },
     {"stats-prntrop",   1,  (void *)&prcopt_.prn[2],     "m"    },
     {"stats-prnpos",    1,  (void *)&prcopt_.prn[5],     "m"    },
+    {"stats-prnvel",    1,  (void *)&prcopt_.prn[6],     "m/s"  },
+    {"stats-prnionomax",1,  (void *)&prcopt_.prn[7],     "m    "},
     {"stats-clkstab",   1,  (void *)&prcopt_.sclkstab,   "s/s"  },
     
     {"ant1-postype",    3,  (void *)&antpostype_[0],     POSOPT },
@@ -228,11 +240,11 @@ static int str2enum(const char *str, const char *comment, int *val)
 {
     const char *p;
     char s[32];
-    
+
     for (p=comment;;p++) {
        if (!(p=strstr(p,str))) break;
-       if (*(p-1)!=':') continue;
-       for (p-=2;'0'<=*p&&*p<='9'&&p>comment;p--) ;
+       if (p>comment&&*(p-1)!=':') continue;
+       if (p>comment) for (p-=2;p>comment&&'0'<=*p&&*p<='9';p--) ;
        p = p == comment ? p : p + 1;
        return sscanf(p,"%d",val)==1;
     }
@@ -356,6 +368,7 @@ extern int loadopts(const char *file, opt_t *opts)
             fprintf(stderr,"invalid option value %s (%s:%d)\n",buff,file,n);
             continue;
         }
+
     }
     fclose(fp);
     

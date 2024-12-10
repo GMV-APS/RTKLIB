@@ -249,7 +249,7 @@ static int test_staid(rtcm_t *rtcm, int staid)
         if (staid!=id) return 0;
     }
     /* save station id */
-    if (rtcm->staid==0||rtcm->obsflag) {
+    if (rtcm->staid==-1||rtcm->obsflag) {
         rtcm->staid=staid;
     }
     else if (staid!=rtcm->staid) {
@@ -257,7 +257,7 @@ static int test_staid(rtcm_t *rtcm, int staid)
         trace(2,"rtcm3 %d staid invalid id=%d %d\n",type,staid,rtcm->staid);
         
         /* reset station id if station id error */
-        rtcm->staid=0;
+        rtcm->staid=-1;
         return 0;
     }
     return 1;
@@ -1975,7 +1975,7 @@ static void sigindex(int sys, const uint8_t *code, int n, const char *opt,
         if (ex[i]==0) ;
         else if (nex<NEXOBS) idx[i]=NFREQ+nex++;
         else { /* no space in obs data */
-            trace(2,"rtcm msm: no space in obs data sys=%d code=%d\n",sys,code[i]);
+            trace(2,"rtcm msm: no space in obs data sys=%d code=%d nexob=%d\n",sys,code[i],NEXOBS);
             idx[i]=-1;
         }
 #if 0 /* for debug */

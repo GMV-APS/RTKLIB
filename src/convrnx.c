@@ -589,12 +589,13 @@ static void update_stas(strfile_t *str)
 {
     stas_t *p;
     
-    if (!str->stas||str->stas->staid!=str->staid) { /* station ID changed */
-        if (!(p=(stas_t *)calloc(sizeof(stas_t),1))) return;
+    if (!str->stas||str->stas->staid!=str->staid){
+        if (!(p=(stas_t *)calloc(1,sizeof(stas_t)))) return;
         p->staid=str->staid;
         p->ts=p->te=str->time;
         p->next=str->stas;
         str->stas=p;
+        trace(3,"update_stas. changed sta pos. curp=%d prevp=%d\n",str->stas,p->next);
    }
    else {
         str->stas->te=str->time;
@@ -603,6 +604,18 @@ static void update_stas(strfile_t *str)
 /* update station info in station list ---------------------------------------*/
 static void update_stainf(strfile_t *str)
 {
+    /*stas_t *p;
+    
+    if (str->stas&&str->stas->staid==str->staid&&strlen(str->stas->sta.name)>0&&
+    !(str->stas->sta.pos[0]==str->sta->pos[0]&&str->stas->sta.pos[1]==str->sta->pos[1]&&str->stas->sta.pos[2]==str->sta->pos[2])){
+        if (!(p=(stas_t *)calloc(1,sizeof(stas_t)))) return;
+        p->staid=str->staid;
+        p->ts=p->te=str->time;
+        p->next=str->stas;
+        str->stas=p;
+        trace(3,"update_stainf. changed sta pos. curp=%d prevp=%d\n",str->stas,p->next);
+   }*/
+
     if (str->stas&&str->stas->staid==str->staid) {
         str->stas->sta=*str->sta;
     }
@@ -616,15 +629,13 @@ static void dump_stas(const strfile_t *str)
     char s1[32],s2[32];
 
     trace(2,"# STATION LIST\n");
-    trace(2,"# %17s %19s %5s %6s %16s %16s %12s %13s %9s %2s %6s %6s %6s\n",
-          "TIME","STAID","MARKER","ANTENNA","RECEIVER","LATITUDE","LONGITUDE",
-          "HIGHT","DT","DEL1","DEL2","DEL3");
+    trace(2,"# START_TIME END_TIME STA_ID STA_NAME ANT_DES REC_TYPE LATITUDE LONGITUDE DEL_TYPE DEL_0 DEL_1 DEL_2\n");
     
     for (p=str->stas;p;p=p->next) {
         time2str(p->ts,s1,0);
         time2str(p->te,s2,0);
         ecef2pos(p->sta.pos,pos);
-        trace(2,"%s %s  %04d %-6.6s %-16.16s %-16.16s %12.8f %13.8f %9.3f %2d "
+        trace(2,"# %s %s  %04d %-6.6s %-16.16s %-16.16s %12.8f %13.8f %9.3f %2d "
               "%6.3f %6.3f %6.3f\n",s1,s2,p->staid,p->sta.name,p->sta.antdes,
               p->sta.rectype,pos[0]*R2D,pos[1]*R2D,pos[2],p->sta.deltype,
               p->sta.del[0],p->sta.del[1],p->sta.del[2]);
@@ -1004,7 +1015,7 @@ static int screent_ttol(gtime_t time, gtime_t ts, gtime_t te, double tint,
 }
 /* convert observation data --------------------------------------------------*/
 static void convobs(FILE **ofp, rnxopt_t *opt, strfile_t *str, int *n,
-                    gtime_t *tend, int *staid)
+                    gtime_t *tend, int *staid, double stapos[])
 {
     gtime_t time;
     int i,j;
@@ -1027,19 +1038,31 @@ static void convobs(FILE **ofp, rnxopt_t *opt, strfile_t *str, int *n,
     /* restore cycle slips */
     rest_slips(str,str->obs->data,str->obs->n);
     
-    if (str->staid!=*staid) { /* station ID changed */
+    /* check for reference station id or position change */
+    const stas_t *p=NULL,*q;
+    for (q=str->stas;q;q=q->next) {
+        if (q->staid==str->staid&&timediff(time,q->te)<=0.0) p=q;
+    }
+    if (str->staid!=*staid||!(p->sta.pos[0]==stapos[0]&&p->sta.pos[1]==stapos[1]&&p->sta.pos[1]==stapos[1])) { /* station changed */
         
-        if (*staid>=0) { /* output RINEX event */
+        if (*staid>=0) { 
+            trace(2,"sta changed. prev_id=%d cur_id=%d prev_pos=%f,%f,%f cur_pos=%f,%f,%f\n",*staid,str->staid,
+            stapos[0],stapos[1],stapos[2],str->sta->pos[0],str->sta->pos[1],str->sta->pos[2]);
+            /* output RINEX event */
             outrnxevent(ofp[0],opt,str->time,EVENT_NEWSITE,str->stas,str->staid);
-        }
-        *staid=str->staid;
-
-        /* set cycle slips */
-        for (i=0;i<str->obs->n;i++) for (j=0;j<NFREQ+NEXOBS;j++) {
-            if (str->obs->data[i].L[j]!=0.0) {
-                str->obs->data[i].LLI[j]|=LLI_SLIP;
+             /* set cycle slips */
+            for (i=0;i<str->obs->n;i++) for (j=0;j<NFREQ+NEXOBS;j++) {
+                if (str->obs->data[i].L[j]!=0.0) {
+                    str->obs->data[i].LLI[j]|=LLI_SLIP;
+                }
             }
         }
+
+        *staid=str->staid;
+        stapos[0]=p->sta.pos[0];
+        stapos[1]=p->sta.pos[1];
+        stapos[2]=p->sta.pos[2];
+
     }
     /* resolve half-cycle ambiguity */
     if (opt->halfcyc) {
@@ -1253,6 +1276,7 @@ static int convrnx_s(int sess, int format, rnxopt_t *opt, const char *file,
     strfile_t *str;
     gtime_t tend[3]={{0}};
     int i,j,nf,type,n[NOUTFILE+2]={0},mask[MAXEXFILE]={0},staid=-1,abort=0;
+    double stapos[3]={0.0};
     char path[1024],*paths[NOUTFILE],s[NOUTFILE][1024];
     char *epath[MAXEXFILE]={0},*staname=*opt->staid?opt->staid:"0000";
     
@@ -1332,7 +1356,7 @@ static int convrnx_s(int sess, int format, rnxopt_t *opt, const char *file,
             
             /* convert message */
             switch (type) {
-                case  1: convobs(ofp,opt,str,n,tend,&staid); break;
+                case  1: convobs(ofp,opt,str,n,tend,&staid,stapos); break;
                 case  2: convnav(ofp,opt,str,n); break;
                 case  3: convsbs(ofp,opt,str,n,tend+1); break;
                 case -1: n[NOUTFILE]++; break; /* error */

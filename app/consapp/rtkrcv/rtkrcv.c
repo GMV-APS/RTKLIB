@@ -636,7 +636,7 @@ static void prstatus(vt_t *vt)
          "PPP-kinema","PPP-static"
     };
     gtime_t eventime={0};
-    const char *freq[]={"-","L1","L1+L2","L1+L2+E5b","L1+L2+E5b+L5","",""};
+    const char *freq[]={"-","L1",FREQ_L1L5?"L1+L5":"L1+L2",FREQ_L1L5?"L1+L5+L2":"L1+L2+L5",FREQ_L1L5?"L1+L5+L2+L6":"L1+L2+L5+L6","",""};
     rtcm_t rtcm[3];
     pthread_t thread;
     int i,j,n,cycle,state,rtkstat,nsat0,nsat1,prcout,rcvcount,tmcount,timevalid,nave;
@@ -785,7 +785,7 @@ static void prsatellite(vt_t *vt, int nf)
     rtk_t rtk;
     double az,el;
     char id[32];
-    int i,j,fix,frq[]={1,2,5,7,8,6};
+    int i,j,fix,frq[]={1,FREQ_L1L5?5:2,FREQ_L1L5?2:5,7,8,6};
     
     trace(4,"prsatellite:\n");
     
@@ -828,7 +828,7 @@ static void probserv(vt_t *vt, int nf)
 {
     obsd_t obs[MAXOBS*2];
     char tstr[64],id[32];
-    int i,j,n=0,frq[]={1,2,5,7,8,6,9};
+    int i,j,n=0,frq[]={1,FREQ_L1L5?5:2,FREQ_L1L5?2:5,7,8,6};
     
     trace(4,"probserv:\n");
     
@@ -1063,7 +1063,7 @@ static void cmd_status(char **args, int narg, vt_t *vt)
 /* satellite command ---------------------------------------------------------*/
 static void cmd_satellite(char **args, int narg, vt_t *vt)
 {
-    int i,nf=2,cycle=0;
+    int i,nf=NFREQ,cycle=0;
     
     trace(3,"cmd_satellite:\n");
     
@@ -1080,7 +1080,7 @@ static void cmd_satellite(char **args, int narg, vt_t *vt)
 /* observ command ------------------------------------------------------------*/
 static void cmd_observ(char **args, int narg, vt_t *vt)
 {
-    int i,nf=2,cycle=0;
+    int i,nf=NFREQ,cycle=0;
     
     trace(3,"cmd_observ:\n");
     

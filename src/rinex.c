@@ -1070,7 +1070,15 @@ static int readrnxobsb(FILE *fp, const char *opt, double ver, int *tsys,
             data[n].sat=(uint8_t)sats[i-1];
             
             /* decode RINEX observation data */
-            if (decode_obsdata(fp,buff,ver,mask,index,data+n)) n++;
+             /* decode RINEX observation data */
+            if (decode_obsdata(fp,buff,ver,mask,index,data+n)) {
+                if (sta) {
+                    data[n].refpos[0]=sta->pos[0];
+                    data[n].refpos[1]=sta->pos[1];
+                    data[n].refpos[2]=sta->pos[2];
+                }
+                n++;
+            }
         }
         else if (*flag==3||*flag==4) { /* new site or header info follows */
             

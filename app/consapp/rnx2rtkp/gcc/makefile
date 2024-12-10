@@ -2,13 +2,18 @@
 BINDIR  = /usr/local/bin
 SRC     = ../../../../src
 
-OPTS    = -DTRACE -DENAGLO -DENAQZS -DENAGAL -DENACMP -DENAIRN -DNFREQ=3 -DNEXOBS=3
+OPTS    = -DTRACE -DENAGLO -DENAQZS -DENAGAL -DENACMP -DENAIRN -DNFREQ=3 -DNEXOBS=10
 #OPTS    = -DTRACE -DENAGLO -DENAQZS -DENAGAL -DENACMP -DENAIRN -DNFREQ=5 -DIERS_MODEL
 #OPTS    = -DENAGLO -DENAQZS -DENAGAL -DENACMP -DNFREQ=2
 
-# for no lapack
-CFLAGS  = -std=c99 -Wall -O3 -pedantic -Wno-unused-but-set-variable -I$(SRC) $(OPTS)
-LDLIBS  = -lgfortran -lm -lrt
+# for no lapack sanitize
+#CFLAGS  = -std=c99 -Wall -Og -pedantic -Wno-unused-but-set-variable -I$(SRC) $(OPTS) -fsanitize=address,undefined -g 
+#LDLIBS  = -lgfortran -lm -lrt -fsanitize=address,undefined -static-libasan
+
+# for no lapack 
+CFLAGS  = -std=c99 -Wall -O3 -pedantic -Wno-unused-but-set-variable -I$(SRC) $(OPTS) 
+LDLIBS  = -lgfortran -lm -lrt 
+
 
 #CFLAGS  = -std=c99 -Wall -O3 -pedantic -Wno-unused-but-set-variable -I$(SRC) -DLAPACK $(OPTS)
 #LDLIBS  = -lm -lrt -llapack -lblas
