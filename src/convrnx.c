@@ -596,26 +596,28 @@ static void update_stas(strfile_t *str)
         p->ts=p->te=str->time;
         p->next=str->stas;
         str->stas=p;
-        trace(3,"update_stas. changed sta pos. curp=%d prevp=%d\n",str->stas,p->next);
+        trace(3,"update_stas. changed sta id. prev_id=%d cur_id=%d\n",(p->next)?p->next->staid:-1,str->stas->staid);
    }
    else {
         str->stas->te=str->time;
    }
 }
 /* update station info in station list ---------------------------------------*/
-static void update_stainf(strfile_t *str)
+static void update_stainf(strfile_t *str, const rnxopt_t* opt)
 {
-    /*stas_t *p;
+    stas_t *p;
     
-    if (str->stas&&str->stas->staid==str->staid&&strlen(str->stas->sta.name)>0&&
+    if (opt->slip_on_poschg && str->stas && str->stas->staid==str->staid && strlen(str->stas->sta.name)>0 &&
     !(str->stas->sta.pos[0]==str->sta->pos[0]&&str->stas->sta.pos[1]==str->sta->pos[1]&&str->stas->sta.pos[2]==str->sta->pos[2])){
         if (!(p=(stas_t *)calloc(1,sizeof(stas_t)))) return;
         p->staid=str->staid;
         p->ts=p->te=str->time;
         p->next=str->stas;
         str->stas=p;
-        trace(3,"update_stainf. changed sta pos. curp=%d prevp=%d\n",str->stas,p->next);
-   }*/
+        trace(3,"update_stainf. changed sta pos. prev_pos=%.3f,%.3f,%.3f cur_pos=%.3f,%.3f,%.3f\n",
+            p->next->sta.pos[0],p->next->sta.pos[1],p->next->sta.pos[2],
+            str->stas->sta.pos[0],str->stas->sta.pos[1],str->stas->sta.pos[2]);
+    }
 
     if (str->stas&&str->stas->staid==str->staid) {
         str->stas->sta=*str->sta;
@@ -800,7 +802,7 @@ static int scan_file(char **files, int nf, rnxopt_t *opt, strfile_t *str,
             }
             else if (type==5) { /* station info */
                 /* update station info */
-                update_stainf(str);
+                update_stainf(str,opt);
             }
             if (++c%11) continue;
             
@@ -1025,7 +1027,7 @@ static void convobs(FILE **ofp, rnxopt_t *opt, strfile_t *str, int *n,
     
     if (!ofp[0]||str->obs->n<=0) return;
     
-    time=str->obs->data[0].time;
+    time=str->time;
     
     /* avoid duplicated data by multiple files handover */
     if (tend->time&&timediff(time,*tend)<opt->ttol) return;
@@ -1044,11 +1046,11 @@ static void convobs(FILE **ofp, rnxopt_t *opt, strfile_t *str, int *n,
     for (q=str->stas;q;q=q->next) {
         if (q->staid==str->staid&&timediff(time,q->te)<=0.0) p=q;
     }
-    if (str->staid!=*staid||!(p->sta.pos[0]==stapos[0]&&p->sta.pos[1]==stapos[1]&&p->sta.pos[1]==stapos[1])) { /* station changed */
+    if (str->staid!=*staid||!(p->sta.pos[0]==stapos[0]&&p->sta.pos[1]==stapos[1]&&p->sta.pos[2]==stapos[2])) { /* station changed */
         
         if (*staid>=0) { 
-            trace(2,"sta changed. prev_id=%d cur_id=%d prev_pos=%f,%f,%f cur_pos=%f,%f,%f\n",*staid,str->staid,
-            stapos[0],stapos[1],stapos[2],str->sta->pos[0],str->sta->pos[1],str->sta->pos[2]);
+            trace(2,"sta changed. introducing cycle slip. prev_id=%d cur_id=%d prev_pos=%.3f,%.3f,%.3f cur_pos=%.3f,%.3f,%.3f\n",*staid,str->staid,
+            stapos[0],stapos[1],stapos[2],p->sta.pos[0],p->sta.pos[1],p->sta.pos[2]);
             /* output RINEX event */
             outrnxevent(ofp[0],opt,str->time,EVENT_NEWSITE,str->stas,str->staid);
              /* set cycle slips */
@@ -1063,7 +1065,6 @@ static void convobs(FILE **ofp, rnxopt_t *opt, strfile_t *str, int *n,
         stapos[0]=p->sta.pos[0];
         stapos[1]=p->sta.pos[1];
         stapos[2]=p->sta.pos[2];
-
     }
     /* resolve half-cycle ambiguity */
     if (opt->halfcyc) {

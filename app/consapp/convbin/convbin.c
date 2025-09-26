@@ -122,12 +122,13 @@ static const char *help[]={
 "     -hp pos      rinex header: approx position x/y/z separated by /",
 "     -hd delta    rinex header: antenna delta h/e/n separated by /",
 "     -v ver       rinex version [3.04]",
-"     -od          include doppler frequency in rinex obs [on]",
-"     -os          include snr in rinex obs [on]",
+"     -od          include doppler frequency in rinex obs [off]",
+"     -os          include snr in rinex obs [off]",
 "     -oi          include iono correction in rinex nav header [off]",
 "     -ot          include time correction in rinex nav header [off]",
 "     -ol          include leap seconds in rinex nav header [off]",
 "     -halfc       half-cycle ambiguity correction [off]",
+"     -sliponch    introduce cycle slip when reported station position changes [off]"
 "     -mask   [sig[,...]] signal mask(s) (sig={G|R|E|J|S|C|I}L{1C|1P|1W|...})",
 "     -nomask [sig[,...]] signal no mask (same as above)",
 "     -x sat       exclude satellite",
@@ -387,8 +388,16 @@ static int cmdopts(int argc, char **argv, rnxopt_t *opt, char **ifile,
     opt->obstype=OBSTYPE_PR|OBSTYPE_CP;
     opt->navsys=SYS_GPS|SYS_GLO|SYS_GAL|SYS_QZS|SYS_SBS|SYS_CMP|SYS_IRN;
     opt->ttol = 0.005;
+    opt->tint = 1;
     
     for (i=0;i<6;i++) for (j=0;j<64;j++) opt->mask[i][j]='1';
+    for (i=0;i<MAXSAT;i++) opt->exsats[i]=0;
+
+    opt->outiono=0;
+    opt->outtime=0;
+    opt->outleaps=0;
+    opt->halfcyc=0;
+    opt->slip_on_poschg=0;
     
     for (i=1;i<argc;i++) {
         if (!strcmp(argv[i],"-ts")&&i+2<argc) {
@@ -489,6 +498,9 @@ static int cmdopts(int argc, char **argv, rnxopt_t *opt, char **ifile,
         }
         else if (!strcmp(argv[i],"-halfc")) {
             opt->halfcyc=1;
+        }
+        else if (!strcmp(argv[i],"-sliponch")) {
+            opt->slip_on_poschg=1;
         }
         else if (!strcmp(argv[i],"-mask")&&i+1<argc) {
             for (j=0;j<6;j++) for (k=0;k<64;k++) opt->mask[j][k]='0';

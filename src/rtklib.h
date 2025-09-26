@@ -1134,6 +1134,7 @@ typedef struct {        /* RINEX options type */
     int phshift;        /* phase shift correction */
     int halfcyc;        /* half cycle correction */
     int sep_nav;        /* separated nav files */
+    int slip_on_poschg; /* introduce cycle slip on reported station position change */
     gtime_t tstart;     /* first obs time */
     gtime_t tend;       /* last obs time */
     gtime_t trtcm;      /* approx log start time for rtcm */
