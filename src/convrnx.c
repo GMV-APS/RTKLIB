@@ -324,6 +324,7 @@ static void close_strfile(strfile_t *str)
     
     if (str->format==STRFMT_RTCM2||str->format==STRFMT_RTCM3) {
         if (str->fp) fclose(str->fp);
+        str->obs->n=0; /* discard any truncated epoch data already decoded due to RTCM multi-message structure */
     }
     else if (str->format<=MAXRCVFMT) {
         if (str->fp) fclose(str->fp);
