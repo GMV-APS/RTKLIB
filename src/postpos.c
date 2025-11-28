@@ -421,6 +421,17 @@ static void procpos(FILE *fp, FILE *fptm, const prcopt_t *popt, const solopt_t *
     rtcm_path[0]='\0';
     
     while ((nobs=inputobs(obs_ptr,rtk->sol.stat,popt))>=0) {
+
+        /* restart filter periodically */
+        if(popt->restartp!=0)
+        {
+            rc = (obs_ptr[0].time.time)%popt->restartp;
+            if(rc<lrc) {
+                trace(2,"restart: time=%d %5.3f c=%d lc=%d\n",obs_ptr[0].time.time,obs_ptr[0].time.sec,rc,lrc); 
+                rtkinit(rtk,popt);
+            }
+            lrc=rc;
+        }
         
         /* exclude satellites */
         for (i=n=0;i<nobs;i++) {
@@ -465,16 +476,6 @@ static void procpos(FILE *fp, FILE *fptm, const prcopt_t *popt, const solopt_t *
                 }
             }
             oldsol = rtk->sol;
-
-            if(popt->restartp!=0)
-            {
-                rc = (obs_ptr[0].time.time)%popt->restartp;
-                if(rc<lrc) {
-                    trace(2,"restart: time=%d %5.3f c=%d lc=%d\n",obs_ptr[0].time.time,obs_ptr[0].time.sec,rc,lrc); 
-                    rtkinit(rtk,popt);
-                }
-                lrc=rc;
-            }
             
         }
         else if (!reverse) { /* combined-forward */
