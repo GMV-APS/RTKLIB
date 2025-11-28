@@ -1580,7 +1580,7 @@ extern int filter(rtk_t *rtk, double *x, double *P, double *Q, const double *H, 
     int i,j,k,info,*ix;
     
     /* create list of non-zero states */
-    ix=imat(n,1); for (i=k=0;i<n;i++) if (x[i]!=0.0&&P[i+i*n]>0.0) ix[k++]=i;
+    ix=imat(n,1); for (i=k=0;i<n;i++) if (i<9||(x[i]!=0.0&&P[i+i*n]>0.0)) ix[k++]=i;
     x_=mat(k,1); xp_=mat(k,1); P_=mat(k,k); Pp_=mat(k,k); H_=mat(k,m);
     if(Q!=NULL) {Qp_=mat(k,k);}
 
